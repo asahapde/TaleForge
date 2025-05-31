@@ -42,7 +42,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Configure axios
 axios.defaults.baseURL = "http://localhost:8080";
-axios.defaults.withCredentials = true;
+// Remove withCredentials as we're using JWT
+// axios.defaults.withCredentials = true;
 axios.defaults.headers.common["Content-Type"] = "application/json";
 axios.defaults.headers.common["Accept"] = "application/json";
 
@@ -52,7 +53,11 @@ axios.interceptors.request.use(
     console.log("Making request to:", config.url);
     const token = localStorage.getItem("token");
     if (token) {
+      // Ensure we're setting the Authorization header correctly
       config.headers.Authorization = `Bearer ${token}`;
+      console.log("Setting Authorization header with token");
+    } else {
+      console.log("No token found in localStorage");
     }
     return config;
   },
@@ -73,11 +78,21 @@ axios.interceptors.response.use(
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
       console.error("Response Error:", error.response.data);
-      if (error.response.status === 401) {
-        localStorage.removeItem("token");
-        delete axios.defaults.headers.common["Authorization"];
-        window.location.href = "/login";
+      console.error("Response Status:", error.response.status);
+      console.error("Response Headers:", error.response.headers);
+      console.error("Request Config:", error.config);
+
+      // Only handle 401 for auth-related endpoints
+      if (
+        error.response.status === 401 &&
+        error.config.url &&
+        !error.config.url.includes("/api/auth/")
+      ) {
+        // For non-auth endpoints, just reject the promise
+        return Promise.reject(error.response.data);
       }
+
+      // For auth endpoints or other errors, handle normally
       return Promise.reject(error.response.data);
     } else if (error.request) {
       // The request was made but no response was received
@@ -141,8 +156,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Store token
       localStorage.setItem("token", token);
+      // Set the token in axios headers
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      console.log("Token stored and header set");
+      console.log("Token stored and header set:", token);
+
+      // Verify token is set
+      const storedToken = localStorage.getItem("token");
+      console.log("Stored token:", storedToken);
+      console.log("Current axios headers:", axios.defaults.headers.common);
 
       setUser(user);
       console.log("User state updated:", user);

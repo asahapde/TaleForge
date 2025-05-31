@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
+import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -24,53 +25,50 @@ export default function CreateStoryPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted");
     setError("");
     setLoading(true);
 
+    // Validate input lengths
+    if (title.length < 3) {
+      setError("Title must be at least 3 characters long");
+      setLoading(false);
+      return;
+    }
+
+    if (description.length < 10) {
+      setError("Description must be at least 10 characters long");
+      setLoading(false);
+      return;
+    }
+
+    if (content.length < 50) {
+      setError("Content must be at least 50 characters long");
+      setLoading(false);
+      return;
+    }
+
     try {
-      console.log("Starting story submission...");
       const requestBody = {
         title,
         description,
         content,
-        tags: tags.split(",").map((tag) => tag.trim()),
+        tags: tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter((tag) => tag.length > 0),
       };
-      console.log("Request body:", JSON.stringify(requestBody, null, 2));
-      console.log("Token:", localStorage.getItem("token"));
 
-      const response = await fetch("http://localhost:8080/api/stories", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      console.log("Response status:", response.status);
-
-      if (!response.ok) {
-        console.log("Response not OK, trying to parse error...");
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          const data = await response.json();
-          console.log("Error data:", data);
-          throw new Error(data.message || "Failed to create story");
-        } else {
-          const text = await response.text();
-          console.log("Error text:", text);
-          throw new Error("Failed to create story: Server returned an error");
-        }
-      }
-
-      console.log("Response OK, parsing data...");
-      const data = await response.json();
-      console.log("Success data:", data);
-      router.push(`/stories/${data.id}`);
+      const response = await axios.post("/api/stories", requestBody);
+      router.push(`/stories/${response.data.id}`);
     } catch (err: any) {
-      console.error("Caught error:", err);
-      setError(err.message || "Failed to create story");
+      console.error("Error creating story:", err);
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError("Failed to create story. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -134,7 +132,7 @@ export default function CreateStoryPage() {
                   htmlFor="title"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Title
+                  Title (min. 3 characters)
                 </label>
                 <div className="mt-1">
                   <input
@@ -142,6 +140,7 @@ export default function CreateStoryPage() {
                     name="title"
                     id="title"
                     required
+                    minLength={3}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
@@ -154,7 +153,7 @@ export default function CreateStoryPage() {
                   htmlFor="description"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Description
+                  Description (min. 10 characters)
                 </label>
                 <div className="mt-1">
                   <textarea
@@ -162,6 +161,7 @@ export default function CreateStoryPage() {
                     name="description"
                     rows={3}
                     required
+                    minLength={10}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
@@ -174,7 +174,7 @@ export default function CreateStoryPage() {
                   htmlFor="content"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Content
+                  Content (min. 50 characters)
                 </label>
                 <div className="mt-1">
                   <textarea
@@ -182,6 +182,7 @@ export default function CreateStoryPage() {
                     name="content"
                     rows={10}
                     required
+                    minLength={50}
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"

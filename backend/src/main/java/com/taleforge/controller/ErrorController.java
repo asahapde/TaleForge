@@ -15,14 +15,13 @@ public class ErrorController implements org.springframework.boot.web.servlet.err
     @RequestMapping("/error")
     public ResponseEntity<Map<String, Object>> handleError(HttpServletRequest request) {
         Map<String, Object> errorDetails = new HashMap<>();
-        Integer statusCode = (Integer) request.getAttribute("javax.servlet.error.status_code");
-        Exception exception = (Exception) request.getAttribute("javax.servlet.error.exception");
+        Integer statusCode = (Integer) request.getAttribute("jakarta.servlet.error.status_code");
+        Exception exception = (Exception) request.getAttribute("jakarta.servlet.error.exception");
         
-        errorDetails.put("status", statusCode);
-        errorDetails.put("error", HttpStatus.valueOf(statusCode).getReasonPhrase());
-        errorDetails.put("message", exception != null ? exception.getMessage() : "No message available");
-        errorDetails.put("path", request.getAttribute("javax.servlet.error.request_uri"));
+        errorDetails.put("status", statusCode != null ? statusCode : HttpStatus.INTERNAL_SERVER_ERROR.value());
+        errorDetails.put("error", exception != null ? exception.getMessage() : "An unexpected error occurred");
+        errorDetails.put("path", request.getAttribute("jakarta.servlet.error.request_uri"));
         
-        return new ResponseEntity<>(errorDetails, HttpStatus.valueOf(statusCode));
+        return new ResponseEntity<>(errorDetails, HttpStatus.valueOf(statusCode != null ? statusCode : HttpStatus.INTERNAL_SERVER_ERROR.value()));
     }
 } 

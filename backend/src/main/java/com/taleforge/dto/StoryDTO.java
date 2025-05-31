@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.HashSet;
 
 @Data
 @NoArgsConstructor
@@ -35,16 +36,20 @@ public class StoryDTO {
     private LocalDateTime updatedAt;
 
     public static StoryDTO fromEntity(Story story) {
+        if (story == null) {
+            return null;
+        }
+        
         StoryDTO dto = new StoryDTO();
         dto.setId(story.getId());
         dto.setTitle(story.getTitle());
         dto.setDescription(story.getDescription());
         dto.setContent(story.getContent());
-        dto.setAuthor(UserDTO.fromEntity(story.getAuthor()));
+        dto.setAuthor(story.getAuthor() != null ? UserDTO.fromEntity(story.getAuthor()) : null);
         dto.setCreatedAt(story.getCreatedAt());
         dto.setUpdatedAt(story.getUpdatedAt());
         dto.setPublished(story.isPublished());
-        dto.setTags(story.getTags());
+        dto.setTags(story.getTags() != null ? story.getTags() : new HashSet<>());
         dto.setViews(story.getViews());
         dto.setRating(story.getRating());
         return dto;

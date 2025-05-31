@@ -1,31 +1,25 @@
 package com.taleforge.service;
 
 import com.taleforge.domain.User;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
+import com.taleforge.security.JwtService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
 
 @Service
 public class AuthService {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
-    private final SecretKey key;
+    private final JwtService jwtService;
+    private final UserDetailsService userDetailsService;
 
-    @Value("${jwt.expiration}")
-    private Long jwtExpiration;
-
-    public AuthService(UserService userService, PasswordEncoder passwordEncoder, @Value("${jwt.secret}") String jwtSecret) {
+    public AuthService(UserService userService, PasswordEncoder passwordEncoder, JwtService jwtService, UserDetailsService userDetailsService) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
-        this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        this.jwtService = jwtService;
+        this.userDetailsService = userDetailsService;
     }
 
     public User authenticate(String email, String password) {
@@ -35,27 +29,17 @@ public class AuthService {
     }
 
     public String generateToken(User user) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpiration);
-
-        return Jwts.builder()
-                .setSubject(user.getEmail())
-                .claim("userId", user.getId())
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(key)
-                .compact();
+        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
+        return jwtService.generateToken(userDetails);
     }
 
     public User validateToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-
-        String email = claims.getSubject();
-        return userService.getUserByEmail(email)
+        String username = jwtService.extractUsername(token);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        if (!jwtService.isTokenValid(token, userDetails)) {
+            throw new RuntimeException("Invalid token");
+        }
+        return userService.getUserByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 

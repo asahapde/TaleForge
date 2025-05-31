@@ -33,8 +33,8 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
+    @Transactional
     public User createUser(User user) {
-        // Encode the password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }

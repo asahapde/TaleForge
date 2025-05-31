@@ -7,6 +7,7 @@ import com.taleforge.dto.StoryDTO;
 import com.taleforge.service.StoryService;
 import com.taleforge.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,30 +44,75 @@ public class StoryController {
             log.info("Successfully fetched {} stories", stories.getTotalElements());
             return ResponseEntity.ok(stories);
         } catch (Exception e) {
-            log.error("Error fetching stories: ", e);
+            log.error("Error getting stories: ", e);
+            log.error("Error message: {}", e.getMessage());
+            log.error("Error cause: {}", e.getCause());
+            if (e.getCause() != null) {
+                log.error("Cause message: {}", e.getCause().getMessage());
+                log.error("Cause stack trace: ", e.getCause());
+            }
             throw e;
         }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<StoryDTO> getStory(@PathVariable Long id) {
-        return ResponseEntity.ok(storyService.getStory(id));
+        try {
+            return ResponseEntity.ok(storyService.getStory(id));
+        } catch (Exception e) {
+            log.error("Error getting story: ", e);
+            log.error("Error message: {}", e.getMessage());
+            log.error("Error cause: {}", e.getCause());
+            if (e.getCause() != null) {
+                log.error("Cause message: {}", e.getCause().getMessage());
+                log.error("Cause stack trace: ", e.getCause());
+            }
+            throw e;
+        }
     }
 
     @PostMapping
-    public ResponseEntity<StoryDTO> createStory(
+    public ResponseEntity<?> createStory(
             @Valid @RequestBody StoryDTO storyDTO,
-            @AuthenticationPrincipal User user) {
-        log.info("Creating story with title: {}", storyDTO.getTitle());
-        log.info("Story DTO: {}", storyDTO);
-        log.info("User: {}", user);
+            HttpServletRequest request) {
         try {
+            User user = (User) request.getAttribute("user");
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("Authentication Error", "Authentication required"));
+            }
+
+            log.info("Found user: {}", user);
+            
+            // Validate required fields
+            if (storyDTO.getTitle() == null || storyDTO.getTitle().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("Validation Error", "Title is required"));
+            }
+            if (storyDTO.getDescription() == null || storyDTO.getDescription().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("Validation Error", "Description is required"));
+            }
+            if (storyDTO.getContent() == null || storyDTO.getContent().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("Validation Error", "Content is required"));
+            }
+            
             StoryDTO createdStory = storyService.createStory(storyDTO, user);
-            log.info("Story created successfully with id: {}", createdStory.getId());
+            log.info("Created story: {}", createdStory);
             return ResponseEntity.ok(createdStory);
+        } catch (EntityNotFoundException e) {
+            log.error("User not found: ", e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("Not Found", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid story data: ", e);
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Validation Error", e.getMessage()));
         } catch (Exception e) {
             log.error("Error creating story: ", e);
-            throw e;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Server Error", "Failed to create story: " + e.getMessage()));
         }
     }
 
@@ -75,16 +120,40 @@ public class StoryController {
     public ResponseEntity<StoryDTO> updateStory(
             @PathVariable Long id,
             @Valid @RequestBody StoryDTO storyDTO,
-            @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(storyService.updateStory(id, storyDTO, user));
+            HttpServletRequest request) {
+        try {
+            User user = (User) request.getAttribute("user");
+            return ResponseEntity.ok(storyService.updateStory(id, storyDTO, user));
+        } catch (Exception e) {
+            log.error("Error updating story: ", e);
+            log.error("Error message: {}", e.getMessage());
+            log.error("Error cause: {}", e.getCause());
+            if (e.getCause() != null) {
+                log.error("Cause message: {}", e.getCause().getMessage());
+                log.error("Cause stack trace: ", e.getCause());
+            }
+            throw e;
+        }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStory(
             @PathVariable Long id,
-            @AuthenticationPrincipal User user) {
-        storyService.deleteStory(id, user);
-        return ResponseEntity.ok().build();
+            HttpServletRequest request) {
+        try {
+            User user = (User) request.getAttribute("user");
+            storyService.deleteStory(id, user);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Error deleting story: ", e);
+            log.error("Error message: {}", e.getMessage());
+            log.error("Error cause: {}", e.getCause());
+            if (e.getCause() != null) {
+                log.error("Cause message: {}", e.getCause().getMessage());
+                log.error("Cause stack trace: ", e.getCause());
+            }
+            throw e;
+        }
     }
 
     @GetMapping("/author/{authorId}")
@@ -155,15 +224,39 @@ public class StoryController {
     @PostMapping("/{id}/publish")
     public ResponseEntity<StoryDTO> publishStory(
             @PathVariable Long id,
-            @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(storyService.publishStory(id, user));
+            HttpServletRequest request) {
+        try {
+            User user = (User) request.getAttribute("user");
+            return ResponseEntity.ok(storyService.publishStory(id, user));
+        } catch (Exception e) {
+            log.error("Error publishing story: ", e);
+            log.error("Error message: {}", e.getMessage());
+            log.error("Error cause: {}", e.getCause());
+            if (e.getCause() != null) {
+                log.error("Cause message: {}", e.getCause().getMessage());
+                log.error("Cause stack trace: ", e.getCause());
+            }
+            throw e;
+        }
     }
 
     @PostMapping("/{id}/unpublish")
     public ResponseEntity<StoryDTO> unpublishStory(
             @PathVariable Long id,
-            @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(storyService.unpublishStory(id, user));
+            HttpServletRequest request) {
+        try {
+            User user = (User) request.getAttribute("user");
+            return ResponseEntity.ok(storyService.unpublishStory(id, user));
+        } catch (Exception e) {
+            log.error("Error unpublishing story: ", e);
+            log.error("Error message: {}", e.getMessage());
+            log.error("Error cause: {}", e.getCause());
+            if (e.getCause() != null) {
+                log.error("Cause message: {}", e.getCause().getMessage());
+                log.error("Cause stack trace: ", e.getCause());
+            }
+            throw e;
+        }
     }
 
     @PostMapping("/{id}/rate")

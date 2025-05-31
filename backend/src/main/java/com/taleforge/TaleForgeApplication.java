@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
-@ComponentScan(basePackages = {"com.taleforge.controller", "com.taleforge.service", "com.taleforge.config"})
+@ComponentScan(basePackages = {"com.taleforge.controller", "com.taleforge.service", "com.taleforge.config", "com.taleforge.security"})
 @EntityScan("com.taleforge.domain")
 @EnableJpaRepositories("com.taleforge.repository")
 @EnableJpaAuditing

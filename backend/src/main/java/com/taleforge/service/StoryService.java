@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.HashSet;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +27,12 @@ public class StoryService {
     private final StoryRepository storyRepository;
     private static final Logger log = LoggerFactory.getLogger(StoryService.class);
 
+    @Transactional(readOnly = true)
     public Page<StoryDTO> getStories(String sort, String tag, Pageable pageable) {
+        if (pageable == null) {
+            pageable = PageRequest.of(0, 10);
+        }
+        
         Page<Story> stories;
         Sort sortObj = getSort(sort);
         Pageable pageableWithSort = PageRequest.of(
@@ -35,12 +41,17 @@ public class StoryService {
             sortObj
         );
 
-        if (tag != null && !tag.isEmpty()) {
-            stories = storyRepository.findByTagsContainingAndPublishedTrue(tag, pageableWithSort);
-        } else {
-            stories = storyRepository.findByPublishedTrue(pageableWithSort);
+        try {
+            if (tag != null && !tag.isEmpty()) {
+                stories = storyRepository.findByTagsContainingAndPublishedTrue(tag, pageableWithSort);
+            } else {
+                stories = storyRepository.findByPublishedTrue(pageableWithSort);
+            }
+            return stories.map(this::convertToDTO);
+        } catch (Exception e) {
+            log.error("Error fetching stories: ", e);
+            throw new RuntimeException("Failed to fetch stories", e);
         }
-        return stories.map(this::convertToDTO);
     }
 
     private Sort getSort(String sort) {
@@ -56,27 +67,52 @@ public class StoryService {
         };
     }
 
+    @Transactional(readOnly = true)
     public StoryDTO getStory(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Story ID cannot be null");
+        }
+        
         Story story = storyRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Story not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Story not found with id: " + id));
         return convertToDTO(story);
     }
 
     @Transactional
     public StoryDTO createStory(StoryDTO storyDTO, User user) {
+        if (storyDTO == null) {
+            throw new IllegalArgumentException("Story DTO cannot be null");
+        }
+        if (user == null) {
+            throw new IllegalArgumentException("User cannot be null");
+        }
+
         log.info("Creating story in service layer");
         log.info("Story DTO: {}", storyDTO);
         log.info("User: {}", user);
+        
         try {
-            Story story = new Story();
-            updateStoryFromDTO(story, storyDTO);
-            story.setAuthor(user);
+            Story story = Story.builder()
+                    .title(storyDTO.getTitle())
+                    .description(storyDTO.getDescription())
+                    .content(storyDTO.getContent())
+                    .published(storyDTO.isPublished())
+                    .views(0)
+                    .rating(0.0)
+                    .tags(storyDTO.getTags() != null ? storyDTO.getTags() : new HashSet<>())
+                    .nodes(new HashSet<>())
+                    .comments(new HashSet<>())
+                    .ratings(new HashSet<>())
+                    .author(user)
+                    .build();
+            
             Story savedStory = storyRepository.save(story);
             log.info("Story saved successfully with id: {}", savedStory.getId());
+            
             return convertToDTO(savedStory);
         } catch (Exception e) {
             log.error("Error creating story in service layer: ", e);
-            throw e;
+            throw new RuntimeException("Failed to create story", e);
         }
     }
 
@@ -131,19 +167,28 @@ public class StoryService {
         return convertToDTO(storyRepository.save(story));
     }
 
+    @Transactional(readOnly = true)
     private StoryDTO convertToDTO(Story story) {
+        if (story == null) {
+            throw new IllegalArgumentException("Story cannot be null");
+        }
+
         StoryDTO dto = new StoryDTO();
         dto.setId(story.getId());
         dto.setTitle(story.getTitle());
         dto.setDescription(story.getDescription());
         dto.setContent(story.getContent());
-        dto.setAuthor(UserDTO.fromEntity(story.getAuthor()));
         dto.setPublished(story.isPublished());
         dto.setViews(story.getViews());
         dto.setRating(story.getRating());
-        dto.setTags(story.getTags());
+        dto.setTags(story.getTags() != null ? story.getTags() : new HashSet<>());
         dto.setCreatedAt(story.getCreatedAt());
         dto.setUpdatedAt(story.getUpdatedAt());
+        
+        if (story.getAuthor() != null) {
+            dto.setAuthor(UserDTO.fromEntity(story.getAuthor()));
+        }
+        
         return dto;
     }
 

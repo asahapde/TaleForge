@@ -36,7 +36,7 @@ public class Story {
     @Column(nullable = false, length = 10000)
     private String content;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "author_id", nullable = false)
     @JsonBackReference(value = "author-stories")
     private User author;
@@ -50,20 +50,20 @@ public class Story {
     @Column(nullable = false)
     private double rating = 0.0;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "story_tags", joinColumns = @JoinColumn(name = "story_id"))
     @Column(name = "tag")
     private Set<String> tags = new HashSet<>();
 
-    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference(value = "story-nodes")
     private Set<StoryNode> nodes = new HashSet<>();
 
-    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference(value = "story-comments")
     private Set<Comment> comments = new HashSet<>();
 
-    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference(value = "story-ratings")
     private Set<Rating> ratings = new HashSet<>();
 
