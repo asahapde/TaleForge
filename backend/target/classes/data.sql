@@ -7,8 +7,8 @@ INSERT INTO user_roles (user_id, role)
 VALUES (1, 'ROLE_USER'), (1, 'ROLE_AUTHOR');
 
 -- Insert test story
-INSERT INTO stories (title, description, author_id, published, views, rating)
-VALUES ('Test Story', 'This is a test story description', 1, true, 0, 0.0);
+INSERT INTO stories (title, description, content, author_id, published, views, rating)
+VALUES ('Test Story', 'This is a test story description', 'This is the content of the test story.', 1, true, 0, 0.0);
 
 -- Insert test story tags
 INSERT INTO story_tags (story_id, tag)

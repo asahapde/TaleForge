@@ -7,8 +7,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -20,6 +21,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class Story {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,32 +30,27 @@ public class Story {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, length = 1000)
     private String description;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @Column(nullable = false, length = 10000)
+    private String content;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
     @JsonBackReference(value = "author-stories")
     private User author;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    @Column(nullable = false)
+    private boolean published = false;
 
     @Column(nullable = false)
-    private boolean published;
+    private int views = 0;
 
     @Column(nullable = false)
-    private int views;
+    private double rating = 0.0;
 
-    @Column(nullable = false)
-    private double rating;
-
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection
     @CollectionTable(name = "story_tags", joinColumns = @JoinColumn(name = "story_id"))
     @Column(name = "tag")
     private Set<String> tags = new HashSet<>();
@@ -69,4 +66,12 @@ public class Story {
     @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference(value = "story-ratings")
     private Set<Rating> ratings = new HashSet<>();
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
 } 

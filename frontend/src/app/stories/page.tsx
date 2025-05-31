@@ -1,245 +1,250 @@
 "use client";
 
+import api from "@/config/api";
+import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 interface Story {
-  id: string;
+  id: number;
   title: string;
   description: string;
-  createdAt: string;
+  content: string;
   author: {
-    id: string;
+    id: number;
     username: string;
+    displayName: string;
   };
+  published: boolean;
   views: number;
   rating: number;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface PaginatedResponse {
+interface PageResponse {
   content: Story[];
-  totalPages: number;
   totalElements: number;
+  totalPages: number;
   size: number;
   number: number;
 }
 
-export default function StoriesList() {
+export default function StoriesPage() {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [filterTag, setFilterTag] = useState("");
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [sortBy, setSortBy] = useState("createdAt");
-  const [direction, setDirection] = useState("desc");
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    const fetchStories = async () => {
-      try {
-        setLoading(true);
-        setError("");
+    if (!authLoading) {
+      fetchStories();
+    }
+  }, [sortBy, filterTag, page, authLoading]);
 
-        const response = await fetch(
-          `/api/stories?page=${page}&size=10&sortBy=${sortBy}&direction=${direction}`
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to fetch stories");
-        }
-
-        const data: PaginatedResponse = await response.json();
-        setStories(data.content);
-        setTotalPages(data.totalPages);
-      } catch (err) {
-        console.error("Error fetching stories:", err);
-        setError(err instanceof Error ? err.message : "Failed to load stories");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStories();
-  }, [page, sortBy, direction]);
-
-  const handleSort = (newSortBy: string) => {
-    if (newSortBy === sortBy) {
-      setDirection(direction === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(newSortBy);
-      setDirection("desc");
+  const fetchStories = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const response = await api.get<PageResponse>("/api/stories", {
+        params: {
+          sort: sortBy,
+          tag: filterTag || undefined,
+          page,
+          size: 9,
+        },
+      });
+      setStories(response.data.content);
+      setTotalPages(response.data.totalPages);
+    } catch (err: any) {
+      console.error("Error fetching stories:", err);
+      setError(
+        err.response?.data?.message || err.message || "Failed to fetch stories"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="animate-pulse space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow"
-              >
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
 
-  if (error) {
+  if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-md bg-red-50 p-4">
-            <div className="flex">
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">{error}</h3>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="sm:flex sm:items-center">
-          <div className="sm:flex-auto">
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-              Stories
-            </h1>
-            <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-              A list of all interactive stories available on Tale Forge.
-            </p>
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">Stories</h1>
+            {user && (
+              <Link
+                href="/stories/create"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Create Story
+              </Link>
+            )}
           </div>
-          <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-            <Link
-              href="/stories/create"
-              className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              Create Story
-            </Link>
-          </div>
-        </div>
 
-        <div className="mt-8 flow-root">
-          <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-              <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-800">
-                    <tr>
-                      <th
-                        scope="col"
-                        className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6 cursor-pointer"
-                        onClick={() => handleSort("title")}
-                      >
-                        Title
-                        {sortBy === "title" && (
-                          <span className="ml-1">
-                            {direction === "asc" ? "↑" : "↓"}
-                          </span>
-                        )}
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white cursor-pointer"
-                        onClick={() => handleSort("createdAt")}
-                      >
-                        Created
-                        {sortBy === "createdAt" && (
-                          <span className="ml-1">
-                            {direction === "asc" ? "↑" : "↓"}
-                          </span>
-                        )}
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white cursor-pointer"
-                        onClick={() => handleSort("views")}
-                      >
-                        Views
-                        {sortBy === "views" && (
-                          <span className="ml-1">
-                            {direction === "asc" ? "↑" : "↓"}
-                          </span>
-                        )}
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white cursor-pointer"
-                        onClick={() => handleSort("rating")}
-                      >
-                        Rating
-                        {sortBy === "rating" && (
-                          <span className="ml-1">
-                            {direction === "asc" ? "↑" : "↓"}
-                          </span>
-                        )}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                    {stories.map((story) => (
-                      <tr key={story.id}>
-                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                          <Link
-                            href={`/stories/${story.id}`}
-                            className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500"
-                          >
-                            {story.title}
-                          </Link>
-                          <div className="text-gray-500 dark:text-gray-400">
-                            {story.description}
-                          </div>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(story.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {story.views}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                          {story.rating.toFixed(1)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          <div className="flex space-x-4 mb-6">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="block w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="popular">Most Popular</option>
+              <option value="rating">Highest Rated</option>
+            </select>
+
+            <input
+              type="text"
+              placeholder="Filter by tag..."
+              value={filterTag}
+              onChange={(e) => setFilterTag(e.target.value)}
+              className="block w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+            />
+          </div>
+
+          {error && (
+            <div
+              className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative mb-4"
+              role="alert"
+            >
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium">{error}</p>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          )}
 
-        {/* Pagination */}
-        <div className="mt-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <button
-              onClick={() => setPage(page - 1)}
-              disabled={page === 0}
-              className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-            >
-              Previous
-            </button>
-            <span className="mx-4 text-sm text-gray-700 dark:text-gray-300">
-              Page {page + 1} of {totalPages}
-            </span>
-            <button
-              onClick={() => setPage(page + 1)}
-              disabled={page >= totalPages - 1}
-              className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-            >
-              Next
-            </button>
-          </div>
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading stories...</p>
+            </div>
+          ) : stories.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600">No stories found.</p>
+              {user && (
+                <Link
+                  href="/stories/create"
+                  className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Create your first story
+                </Link>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {stories.map((story) => (
+                  <Link
+                    key={story.id}
+                    href={`/stories/${story.id}`}
+                    className="block bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-300"
+                  >
+                    <div className="px-4 py-5 sm:p-6">
+                      <h3 className="text-lg font-medium text-gray-900 truncate">
+                        {story.title}
+                      </h3>
+                      <p className="mt-2 text-sm text-gray-500 line-clamp-3">
+                        {story.description}
+                      </p>
+                      <div className="mt-4 flex items-center justify-between">
+                        <div className="flex items-center">
+                          <span className="text-sm text-gray-500">
+                            By{" "}
+                            {story.author.displayName || story.author.username}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <span className="text-sm text-gray-500">
+                            {story.views} views
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            ★ {story.rating.toFixed(1)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {story.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="mt-8 flex justify-center">
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                    <button
+                      onClick={() => handlePageChange(page - 1)}
+                      disabled={page === 0}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handlePageChange(i)}
+                        className={`relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium ${
+                          page === i
+                            ? "text-indigo-600 bg-indigo-50"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => handlePageChange(page + 1)}
+                      disabled={page === totalPages - 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </nav>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

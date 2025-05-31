@@ -1,29 +1,33 @@
 "use client";
 
 import axios from "axios";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 interface User {
   id: number;
   username: string;
   email: string;
-  displayName: string;
-  bio: string;
+  displayName?: string;
+  bio?: string;
   enabled: boolean;
+  roles: string[];
   createdAt: string;
   updatedAt: string;
-  roles: string[];
 }
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
-  resetPassword: (email: string) => Promise<void>;
 }
 
 interface RegisterData {
@@ -46,6 +50,10 @@ axios.defaults.headers.common["Accept"] = "application/json";
 axios.interceptors.request.use(
   (config) => {
     console.log("Making request to:", config.url);
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -65,6 +73,11 @@ axios.interceptors.response.use(
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
       console.error("Response Error:", error.response.data);
+      if (error.response.status === 401) {
+        localStorage.removeItem("token");
+        delete axios.defaults.headers.common["Authorization"];
+        window.location.href = "/auth/login";
+      }
       return Promise.reject(error.response.data);
     } else if (error.request) {
       // The request was made but no response was received
@@ -81,56 +94,49 @@ axios.interceptors.response.use(
   }
 );
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    if (storedToken) {
-      setToken(storedToken);
+    const token = localStorage.getItem("token");
+    if (token) {
       // Set the token in axios headers
-      axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
       // Fetch user data
-      fetchUserData(storedToken);
+      axios
+        .get("/api/auth/me")
+        .then((response) => {
+          setUser(response.data);
+        })
+        .catch((error) => {
+          console.error("Error fetching user data:", error);
+          localStorage.removeItem("token");
+          delete axios.defaults.headers.common["Authorization"];
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     } else {
       setLoading(false);
     }
   }, []);
 
-  const fetchUserData = async (authToken: string) => {
-    try {
-      const response = await axios.get("/api/auth/me", {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      setUser(response.data);
-    } catch (err) {
-      console.error("Error fetching user data:", err);
-      // If token is invalid, clear everything
-      localStorage.removeItem("token");
-      setToken(null);
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const login = async (email: string, password: string) => {
     try {
       setError(null);
       const response = await axios.post("/api/auth/login", { email, password });
-      const { token: newToken, user: userData } = response.data;
+      const { token, user } = response.data;
 
       // Store token
-      localStorage.setItem("token", newToken);
-      setToken(newToken);
-      setUser(userData);
+      localStorage.setItem("token", token);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      // Set the token in axios headers
-      axios.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+      setUser(user);
     } catch (err: any) {
+      console.error("Login error:", err);
       const errorMessage = err.message || "Login failed";
       setError(errorMessage);
       throw new Error(errorMessage);
@@ -141,47 +147,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setError(null);
       const response = await axios.post("/api/auth/register", data);
-      const { token: newToken, user: newUser } = response.data;
+      const { token, user } = response.data;
 
       // Store token
-      localStorage.setItem("token", newToken);
-      setToken(newToken);
-      setUser(newUser);
+      localStorage.setItem("token", token);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      // Set the token in axios headers
-      axios.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+      setUser(user);
     } catch (err: any) {
-      setError(err.message || "Registration failed");
-      throw err;
+      console.error("Registration error:", err);
+      const errorMessage = err.message || "Registration failed";
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
   };
 
   const logout = () => {
     localStorage.removeItem("token");
-    setToken(null);
-    setUser(null);
     delete axios.defaults.headers.common["Authorization"];
-  };
-
-  const resetPassword = async (email: string) => {
-    try {
-      setError(null);
-      await axios.post("/api/auth/reset-password", { email });
-    } catch (err: any) {
-      setError(err.message || "Password reset failed");
-      throw err;
-    }
+    setUser(null);
   };
 
   const value = {
     user,
-    token,
     loading,
     error,
     login,
     register,
     logout,
-    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

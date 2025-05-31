@@ -1,6 +1,8 @@
 package com.taleforge.dto;
 
 import com.taleforge.domain.Story;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,15 +13,26 @@ import java.util.Set;
 @NoArgsConstructor
 public class StoryDTO {
     private Long id;
+
+    @NotBlank(message = "Title is required")
+    @Size(min = 3, max = 100, message = "Title must be between 3 and 100 characters")
     private String title;
+
+    @NotBlank(message = "Description is required")
+    @Size(min = 10, max = 1000, message = "Description must be between 10 and 1000 characters")
     private String description;
+
+    @NotBlank(message = "Content is required")
+    @Size(min = 10, max = 10000, message = "Content must be between 10 and 10000 characters")
+    private String content;
+
     private UserDTO author;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
     private boolean published;
-    private Set<String> tags;
     private int views;
     private double rating;
+    private Set<String> tags;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public static StoryDTO fromEntity(Story story) {
         StoryDTO dto = new StoryDTO();

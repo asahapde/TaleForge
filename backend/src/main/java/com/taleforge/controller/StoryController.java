@@ -1,17 +1,21 @@
 package com.taleforge.controller;
 
 import com.taleforge.domain.Story;
+import com.taleforge.domain.User;
 import com.taleforge.dto.ErrorResponse;
 import com.taleforge.dto.StoryDTO;
 import com.taleforge.service.StoryService;
+import com.taleforge.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,85 +29,52 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class StoryController {
     private final StoryService storyService;
+    private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<?> getAllStories() {
+    public ResponseEntity<Page<StoryDTO>> getStories(
+            @RequestParam(required = false, defaultValue = "newest") String sort,
+            @RequestParam(required = false) String tag,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "9") int size) {
         try {
-            log.info("Fetching all stories");
-            List<Story> stories = storyService.getAllStories();
-            log.info("Successfully fetched {} stories", stories.size());
+            log.info("Fetching stories with sort: {}, tag: {}, page: {}, size: {}", sort, tag, page, size);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<StoryDTO> stories = storyService.getStories(sort, tag, pageable);
+            log.info("Successfully fetched {} stories", stories.getTotalElements());
             return ResponseEntity.ok(stories);
         } catch (Exception e) {
             log.error("Error fetching stories: ", e);
-            return ResponseEntity.internalServerError().body("Error fetching stories: " + e.getMessage());
+            throw e;
         }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getStoryById(@PathVariable Long id) {
-        try {
-            log.info("Fetching story with id: {}", id);
-            Story story = storyService.getStoryById(id);
-            if (story != null) {
-                log.info("Successfully fetched story with id: {}", id);
-                return ResponseEntity.ok(story);
-            } else {
-                log.warn("Story not found with id: {}", id);
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            log.error("Error fetching story with id {}: ", id, e);
-            return ResponseEntity.internalServerError().body("Error fetching story: " + e.getMessage());
-        }
+    public ResponseEntity<StoryDTO> getStory(@PathVariable Long id) {
+        return ResponseEntity.ok(storyService.getStory(id));
     }
 
     @PostMapping
-    public ResponseEntity<?> createStory(@RequestBody Story story) {
-        try {
-            log.info("Creating new story: {}", story.getTitle());
-            Story createdStory = storyService.createStory(story);
-            log.info("Successfully created story with id: {}", createdStory.getId());
-            return ResponseEntity.ok(createdStory);
-        } catch (Exception e) {
-            log.error("Error creating story: ", e);
-            return ResponseEntity.internalServerError().body("Error creating story: " + e.getMessage());
-        }
+    public ResponseEntity<StoryDTO> createStory(
+            @Valid @RequestBody StoryDTO storyDTO,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(storyService.createStory(storyDTO, user));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateStory(@PathVariable Long id, @RequestBody Story story) {
-        try {
-            log.info("Updating story with id: {}", id);
-            Story updatedStory = storyService.updateStory(id, story);
-            if (updatedStory != null) {
-                log.info("Successfully updated story with id: {}", id);
-                return ResponseEntity.ok(updatedStory);
-            } else {
-                log.warn("Story not found with id: {}", id);
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            log.error("Error updating story with id {}: ", id, e);
-            return ResponseEntity.internalServerError().body("Error updating story: " + e.getMessage());
-        }
+    public ResponseEntity<StoryDTO> updateStory(
+            @PathVariable Long id,
+            @Valid @RequestBody StoryDTO storyDTO,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(storyService.updateStory(id, storyDTO, user));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteStory(@PathVariable Long id) {
-        try {
-            log.info("Deleting story with id: {}", id);
-            boolean deleted = storyService.deleteStory(id);
-            if (deleted) {
-                log.info("Successfully deleted story with id: {}", id);
-                return ResponseEntity.ok().build();
-            } else {
-                log.warn("Story not found with id: {}", id);
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            log.error("Error deleting story with id {}: ", id, e);
-            return ResponseEntity.internalServerError().body("Error deleting story: " + e.getMessage());
-        }
+    public ResponseEntity<Void> deleteStory(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+        storyService.deleteStory(id, user);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/author/{authorId}")
@@ -172,39 +143,17 @@ public class StoryController {
     }
 
     @PostMapping("/{id}/publish")
-    public ResponseEntity<?> publishStory(@PathVariable Long id) {
-        try {
-            log.info("Publishing story with id: {}", id);
-            Story story = storyService.publishStory(id);
-            if (story != null) {
-                log.info("Successfully published story with id: {}", id);
-                return ResponseEntity.ok(story);
-            } else {
-                log.warn("Story not found with id: {}", id);
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            log.error("Error publishing story with id {}: ", id, e);
-            return ResponseEntity.internalServerError().body("Error publishing story: " + e.getMessage());
-        }
+    public ResponseEntity<StoryDTO> publishStory(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(storyService.publishStory(id, user));
     }
 
     @PostMapping("/{id}/unpublish")
-    public ResponseEntity<?> unpublishStory(@PathVariable Long id) {
-        try {
-            log.info("Unpublishing story with id: {}", id);
-            Story story = storyService.unpublishStory(id);
-            if (story != null) {
-                log.info("Successfully unpublished story with id: {}", id);
-                return ResponseEntity.ok(story);
-            } else {
-                log.warn("Story not found with id: {}", id);
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            log.error("Error unpublishing story with id {}: ", id, e);
-            return ResponseEntity.internalServerError().body("Error unpublishing story: " + e.getMessage());
-        }
+    public ResponseEntity<StoryDTO> unpublishStory(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(storyService.unpublishStory(id, user));
     }
 
     @PostMapping("/{id}/rate")

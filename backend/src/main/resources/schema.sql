@@ -1,10 +1,12 @@
--- Drop existing tables if they exist
-DROP TABLE IF EXISTS story_tags;
-DROP TABLE IF EXISTS story_nodes;
-DROP TABLE IF EXISTS comments;
-DROP TABLE IF EXISTS stories;
-DROP TABLE IF EXISTS user_roles;
-DROP TABLE IF EXISTS users;
+-- Drop existing tables if they exist (in correct order to handle dependencies)
+DROP TABLE IF EXISTS node_tags CASCADE;
+DROP TABLE IF EXISTS comments CASCADE;
+DROP TABLE IF EXISTS story_nodes CASCADE;
+DROP TABLE IF EXISTS story_tags CASCADE;
+DROP TABLE IF EXISTS ratings CASCADE;
+DROP TABLE IF EXISTS stories CASCADE;
+DROP TABLE IF EXISTS user_roles CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
 
 -- Create users table
 CREATE TABLE users (
@@ -32,6 +34,7 @@ CREATE TABLE stories (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
+    content TEXT NOT NULL,
     author_id BIGINT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -86,4 +89,18 @@ CREATE TABLE comments (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (node_id) REFERENCES story_nodes(id) ON DELETE CASCADE,
     FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create ratings table
+CREATE TABLE ratings (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    story_id BIGINT NOT NULL,
+    rating_value INT NOT NULL,
+    review TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_story_rating (user_id, story_id)
 ); 

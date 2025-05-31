@@ -1,6 +1,7 @@
 package com.taleforge.controller;
 
 import com.taleforge.domain.User;
+import com.taleforge.dto.UserDTO;
 import com.taleforge.service.UserService;
 import com.taleforge.service.AuthService;
 import jakarta.validation.Valid;
@@ -36,7 +37,7 @@ public class AuthController {
             
             return ResponseEntity.ok(Map.of(
                 "token", token,
-                "user", createdUser
+                "user", UserDTO.fromEntity(createdUser)
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", "Registration failed: " + e.getMessage()));
@@ -58,7 +59,7 @@ public class AuthController {
             
             return ResponseEntity.ok(Map.of(
                 "token", token,
-                "user", user
+                "user", UserDTO.fromEntity(user)
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", "Invalid credentials"));
@@ -74,7 +75,7 @@ public class AuthController {
             
             String token = authHeader.substring(7); // Remove "Bearer "
             User user = authService.validateToken(token);
-            return ResponseEntity.ok(user);
+            return ResponseEntity.ok(UserDTO.fromEntity(user));
         } catch (Exception e) {
             return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
         }
