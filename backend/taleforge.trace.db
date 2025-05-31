@@ -84,3 +84,8 @@ DROP TABLE IF EXISTS story_nodes [90107-224]
 	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354)
 	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1343)
 	at com.taleforge.TaleForgeApplication.main(TaleForgeApplication.java:18)
+2025-05-31 03:06:01.740977-04:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "STORY" not found; SQL statement:
+SELECT *
+FROM story
+WHERE author_id = 2 [42102-224]
