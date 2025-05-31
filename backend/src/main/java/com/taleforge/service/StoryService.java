@@ -14,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -22,6 +24,7 @@ import java.util.List;
 public class StoryService {
 
     private final StoryRepository storyRepository;
+    private static final Logger log = LoggerFactory.getLogger(StoryService.class);
 
     public Page<StoryDTO> getStories(String sort, String tag, Pageable pageable) {
         Page<Story> stories;
@@ -61,10 +64,20 @@ public class StoryService {
 
     @Transactional
     public StoryDTO createStory(StoryDTO storyDTO, User user) {
-        Story story = new Story();
-        updateStoryFromDTO(story, storyDTO);
-        story.setAuthor(user);
-        return convertToDTO(storyRepository.save(story));
+        log.info("Creating story in service layer");
+        log.info("Story DTO: {}", storyDTO);
+        log.info("User: {}", user);
+        try {
+            Story story = new Story();
+            updateStoryFromDTO(story, storyDTO);
+            story.setAuthor(user);
+            Story savedStory = storyRepository.save(story);
+            log.info("Story saved successfully with id: {}", savedStory.getId());
+            return convertToDTO(savedStory);
+        } catch (Exception e) {
+            log.error("Error creating story in service layer: ", e);
+            throw e;
+        }
     }
 
     @Transactional

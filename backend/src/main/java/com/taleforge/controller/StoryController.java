@@ -58,7 +58,17 @@ public class StoryController {
     public ResponseEntity<StoryDTO> createStory(
             @Valid @RequestBody StoryDTO storyDTO,
             @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(storyService.createStory(storyDTO, user));
+        log.info("Creating story with title: {}", storyDTO.getTitle());
+        log.info("Story DTO: {}", storyDTO);
+        log.info("User: {}", user);
+        try {
+            StoryDTO createdStory = storyService.createStory(storyDTO, user);
+            log.info("Story created successfully with id: {}", createdStory.getId());
+            return ResponseEntity.ok(createdStory);
+        } catch (Exception e) {
+            log.error("Error creating story: ", e);
+            throw e;
+        }
     }
 
     @PutMapping("/{id}")

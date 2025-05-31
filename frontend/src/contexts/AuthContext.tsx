@@ -76,7 +76,7 @@ axios.interceptors.response.use(
       if (error.response.status === 401) {
         localStorage.removeItem("token");
         delete axios.defaults.headers.common["Authorization"];
-        window.location.href = "/auth/login";
+        window.location.href = "/login";
       }
       return Promise.reject(error.response.data);
     } else if (error.request) {
@@ -100,41 +100,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      // Set the token in axios headers
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    const initializeAuth = async () => {
+      console.log("Starting auth initialization...");
+      const token = localStorage.getItem("token");
+      console.log("Token from localStorage:", token);
 
-      // Fetch user data
-      axios
-        .get("/api/auth/me")
-        .then((response) => {
+      if (token) {
+        try {
+          // Set the token in axios headers
+          axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+          console.log("Set Authorization header with token");
+
+          // Fetch user data
+          console.log("Fetching user data...");
+          const response = await axios.get("/api/auth/me");
+          console.log("User data fetched successfully:", response.data);
           setUser(response.data);
-        })
-        .catch((error) => {
+        } catch (error) {
           console.error("Error fetching user data:", error);
           localStorage.removeItem("token");
           delete axios.defaults.headers.common["Authorization"];
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
+        }
+      } else {
+        console.log("No token found in localStorage");
+      }
+      console.log("Auth initialization complete");
       setLoading(false);
-    }
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
+      console.log("Starting login process...");
       setError(null);
       const response = await axios.post("/api/auth/login", { email, password });
       const { token, user } = response.data;
+      console.log("Login successful, received token and user data");
 
       // Store token
       localStorage.setItem("token", token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      console.log("Token stored and header set");
 
       setUser(user);
+      console.log("User state updated:", user);
     } catch (err: any) {
       console.error("Login error:", err);
       const errorMessage = err.message || "Login failed";
@@ -145,15 +156,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: RegisterData) => {
     try {
+      console.log("Starting registration process...");
       setError(null);
       const response = await axios.post("/api/auth/register", data);
       const { token, user } = response.data;
+      console.log("Registration successful, received token and user data");
 
       // Store token
       localStorage.setItem("token", token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      console.log("Token stored and header set");
 
       setUser(user);
+      console.log("User state updated:", user);
     } catch (err: any) {
       console.error("Registration error:", err);
       const errorMessage = err.message || "Registration failed";
@@ -163,9 +178,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    console.log("Starting logout process...");
     localStorage.removeItem("token");
     delete axios.defaults.headers.common["Authorization"];
     setUser(null);
+    console.log("Logout complete");
   };
 
   const value = {

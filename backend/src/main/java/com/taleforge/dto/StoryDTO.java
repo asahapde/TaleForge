@@ -39,6 +39,7 @@ public class StoryDTO {
         dto.setId(story.getId());
         dto.setTitle(story.getTitle());
         dto.setDescription(story.getDescription());
+        dto.setContent(story.getContent());
         dto.setAuthor(UserDTO.fromEntity(story.getAuthor()));
         dto.setCreatedAt(story.getCreatedAt());
         dto.setUpdatedAt(story.getUpdatedAt());

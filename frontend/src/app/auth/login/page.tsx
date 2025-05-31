@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export default function LoginPage() {
@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,7 +21,9 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push("/"); // Redirect to home page after successful login
+      // Get redirect URL from query params or default to home
+      const redirectUrl = searchParams?.get("redirect") || "/";
+      router.push(redirectUrl);
     } catch (err: any) {
       setError(err.message || "Failed to login");
     } finally {

@@ -9,10 +9,13 @@ com\taleforge\dto\StoryDTO.class
 com\taleforge\domain\Story$StoryBuilder.class
 com\taleforge\repository\RatingRepository.class
 com\taleforge\domain\Comment.class
+com\taleforge\security\JwtAuthenticationFilter.class
+com\taleforge\security\JwtService.class
 com\taleforge\config\WebConfig.class
 com\taleforge\domain\User$UserBuilder.class
 com\taleforge\config\BasicSecurityConfig.class
 com\taleforge\exception\ResourceNotFoundException.class
+com\taleforge\security\CustomUserDetailsService.class
 com\taleforge\domain\Story.class
 com\taleforge\controller\ErrorController.class
 com\taleforge\exception\UnauthorizedException.class
