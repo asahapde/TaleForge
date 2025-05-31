@@ -1,5 +1,6 @@
 package com.taleforge.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.taleforge.domain.Story;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -32,7 +33,11 @@ public class StoryDTO {
     private int views;
     private double rating;
     private Set<String> tags;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private LocalDateTime createdAt;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private LocalDateTime updatedAt;
 
     public static StoryDTO fromEntity(Story story) {

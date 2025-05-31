@@ -18,6 +18,7 @@ interface Story {
   };
   published: boolean;
   views: number;
+  likes: number;
   rating: number;
   tags: string[];
   createdAt: string;
@@ -29,6 +30,7 @@ export default function MyStoriesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [deletingStoryId, setDeletingStoryId] = useState<number | null>(null);
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -84,6 +86,31 @@ export default function MyStoriesPage() {
           err.message ||
           "Failed to unpublish story"
       );
+    }
+  };
+
+  const handleDelete = async (storyId: number) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this story? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setError("");
+      setSuccess("");
+      setDeletingStoryId(storyId);
+      await api.delete(`/api/stories/${storyId}`);
+      setSuccess("Story deleted successfully!");
+      fetchMyStories(); // Refresh the list
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message || err.message || "Failed to delete story"
+      );
+    } finally {
+      setDeletingStoryId(null);
     }
   };
 
@@ -181,71 +208,111 @@ export default function MyStoriesPage() {
               {stories.map((story) => (
                 <div
                   key={story.id}
-                  className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-300"
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full"
                 >
-                  <div className="px-4 py-5 sm:p-6">
-                    <div className="flex justify-between items-start">
-                      <h3 className="text-lg font-medium text-gray-900 truncate">
-                        {story.title}
-                      </h3>
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          story.published
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {story.published ? "Published" : "Draft"}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm text-gray-500 line-clamp-3">
-                      {story.description}
-                    </p>
-                    <div className="mt-4 flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <span className="text-sm text-gray-500">
-                          {story.views} views
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          ★ {story.rating.toFixed(1)}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Link
-                          href={`/stories/${story.id}`}
-                          className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
-                        >
-                          View
-                        </Link>
-                        <button
-                          onClick={() =>
+                  <div className="p-6 flex flex-col h-full">
+                    <div className="flex-grow">
+                      <div className="flex justify-between items-start mb-2">
+                        <h2 className="text-xl font-semibold line-clamp-1">
+                          <Link
+                            href={`/stories/${story.id}`}
+                            className="text-gray-900 hover:text-indigo-600"
+                          >
+                            {story.title}
+                          </Link>
+                        </h2>
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${
                             story.published
-                              ? handleUnpublish(story.id)
-                              : handlePublish(story.id)
-                          }
-                          className={`inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded ${
-                            story.published
-                              ? "text-red-700 bg-red-100 hover:bg-red-200"
-                              : "text-green-700 bg-green-100 hover:bg-green-200"
-                          } focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                            story.published
-                              ? "focus:ring-red-500"
-                              : "focus:ring-green-500"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
                           }`}
                         >
-                          {story.published ? "Unpublish" : "Publish"}
-                        </button>
+                          {story.published ? "Published" : "Draft"}
+                        </span>
+                      </div>
+                      <p className="text-gray-600 mb-4 line-clamp-3 min-h-[4.5rem]">
+                        {story.description}
+                      </p>
+                    </div>
+                    <div className="flex justify-between items-center text-sm text-gray-500 mt-auto">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <span className="flex items-center gap-1">
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                          {story.views}
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                            />
+                          </svg>
+                          {story.likes}
+                        </span>
                       </div>
                     </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {story.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="inline-block bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded"
+                    <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
+                      <div className="flex space-x-2">
+                        <Link
+                          href={`/stories/edit/${story.id}`}
+                          className="text-blue-600 hover:text-blue-900 text-sm font-medium"
                         >
-                          #{tag}
-                        </span>
-                      ))}
+                          Edit
+                        </Link>
+                      </div>
+                      <div className="flex space-x-2">
+                        {story.published ? (
+                          <button
+                            onClick={() => handleUnpublish(story.id)}
+                            className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-yellow-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                          >
+                            Unpublish
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handlePublish(story.id)}
+                            className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                          >
+                            Publish
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(story.id)}
+                          disabled={deletingStoryId === story.id}
+                          className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                        >
+                          {deletingStoryId === story.id
+                            ? "Deleting..."
+                            : "Delete"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
