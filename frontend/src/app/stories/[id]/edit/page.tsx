@@ -2,18 +2,69 @@
 
 import api from "@/config/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-export default function CreateStoryPage() {
+interface Story {
+  id: number;
+  title: string;
+  description: string;
+  content: string;
+  author: {
+    id: number;
+    username: string;
+    displayName: string;
+  };
+  published: boolean;
+  views: number;
+  likes: number;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export default function EditStoryPage() {
+  const params = useParams() || {};
+  const id =
+    typeof params.id === "string"
+      ? params.id
+      : Array.isArray(params.id)
+      ? params.id[0]
+      : "";
+  const [story, setStory] = useState<Story | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
   const [tags, setTags] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    const fetchStory = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const response = await api.get(`/stories/${id}`);
+        const storyData = response.data;
+        setStory(storyData);
+        setTitle(storyData.title);
+        setDescription(storyData.description);
+        setContent(storyData.content);
+        setTags(storyData.tags.join(", "));
+      } catch (err: any) {
+        setError(
+          err.response?.data?.message || err.message || "Failed to fetch story"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchStory();
+  }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,8 +87,8 @@ export default function CreateStoryPage() {
     }
 
     try {
-      setLoading(true);
-      const response = await api.post("/stories", {
+      setSaving(true);
+      const response = await api.put(`/stories/${id}`, {
         title,
         description,
         content,
@@ -48,16 +99,16 @@ export default function CreateStoryPage() {
       });
       router.push(`/stories/${response.data.id}`);
     } catch (err: any) {
-      console.error("Error creating story:", err);
+      console.error("Error updating story:", err);
       if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else if (err.message) {
         setError(err.message);
       } else {
-        setError("Failed to create story. Please try again.");
+        setError("Failed to update story. Please try again.");
       }
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -74,7 +125,7 @@ export default function CreateStoryPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Please log in to create a story
+            Please log in to edit stories
           </h1>
           <a
             href="/auth/login"
@@ -87,14 +138,40 @@ export default function CreateStoryPage() {
     );
   }
 
+  if (!story) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-600">Story not found.</div>
+      </div>
+    );
+  }
+
+  if (user.id !== story.author.id) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            You don't have permission to edit this story
+          </h1>
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
       <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-          Create a New Story
+          Edit Story
         </h1>
         <p className="text-sm text-gray-500">
-          Share your tale with the world. Make it engaging and memorable.
+          Make your story even better. Update the content, refine the details.
         </p>
       </div>
 
@@ -196,14 +273,14 @@ export default function CreateStoryPage() {
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={saving}
             className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
-              loading
+              saving
                 ? "bg-indigo-400 cursor-not-allowed"
                 : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             }`}
           >
-            {loading ? (
+            {saving ? (
               <>
                 <svg
                   className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
@@ -225,10 +302,10 @@ export default function CreateStoryPage() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                Creating...
+                Saving...
               </>
             ) : (
-              "Create Story"
+              "Save Changes"
             )}
           </button>
         </div>
