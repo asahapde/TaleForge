@@ -96,6 +96,7 @@ public class SecurityConfig {
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/stories/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/likes/**").permitAll()
+                .requestMatchers("/comments/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

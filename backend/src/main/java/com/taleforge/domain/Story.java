@@ -59,12 +59,12 @@ public class Story {
     @Builder.Default
     private Set<String> tags = new HashSet<>();
 
-    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference(value = "story-nodes")
     @Builder.Default
     private Set<StoryNode> nodes = new HashSet<>();
 
-    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference(value = "story-comments")
     @Builder.Default
     private Set<Comment> comments = new HashSet<>();

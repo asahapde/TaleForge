@@ -1,5 +1,6 @@
 "use client";
 
+import Comments from "@/components/Comments";
 import api from "@/config/api";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
@@ -593,6 +594,8 @@ export default function StoryDetailPage() {
               </button>
             )}
           </div>
+
+          <Comments storyId={story.id} />
         </>
       )}
     </div>

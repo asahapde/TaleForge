@@ -32,10 +32,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.startsWith("/auth/") || 
+        String method = request.getMethod();
+        
+        logger.debug("Checking path: {} with method: {}", path, method);
+        
+        boolean shouldNotFilter = path.startsWith("/auth/") || 
                path.startsWith("/h2-console/") ||
-               (path.startsWith("/stories/") && request.getMethod().equals("GET")) ||
-               (path.startsWith("/likes/") && request.getMethod().equals("GET"));
+               (path.startsWith("/stories/") && method.equals("GET")) ||
+               (path.startsWith("/likes/") && method.equals("GET")) ||
+               (path.startsWith("/comments/") && method.equals("GET"));
+               
+        logger.debug("Should not filter: {}", shouldNotFilter);
+        return shouldNotFilter;
     }
 
     @Override
@@ -47,6 +55,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             final String authHeader = request.getHeader("Authorization");
             logger.debug("Authorization header: {}", authHeader);
+            logger.debug("Request URI: {}", request.getRequestURI());
+            logger.debug("Request Method: {}", request.getMethod());
 
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 logger.debug("No valid Authorization header found");
@@ -60,6 +70,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+                logger.debug("Loaded user details for username: {}", username);
                 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     User user = userService.getUserByUsername(username)
@@ -77,6 +88,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                     request.setAttribute("user", user);
                     logger.debug("Authentication successful for user: {}", username);
+                } else {
+                    logger.debug("Token validation failed for user: {}", username);
                 }
             }
         } catch (Exception e) {

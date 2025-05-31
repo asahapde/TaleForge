@@ -35,9 +35,6 @@ public class StoryNode {
     @OneToMany(mappedBy = "parentNode", cascade = CascadeType.ALL)
     private Set<StoryNode> childNodes = new HashSet<>();
 
-    @OneToMany(mappedBy = "node", cascade = CascadeType.ALL)
-    private Set<Comment> comments = new HashSet<>();
-
     @Column(nullable = false)
     private int position;
 

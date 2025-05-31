@@ -7,7 +7,10 @@ com\taleforge\dto\UserDTO.class
 com\taleforge\controller\LikeController.class
 com\taleforge\domain\Like$LikeBuilder.class
 com\taleforge\dto\StoryDTO.class
+com\taleforge\service\CommentService.class
 com\taleforge\domain\Story$StoryBuilder.class
+com\taleforge\repository\CommentRepository.class
+com\taleforge\controller\CommentRequest.class
 com\taleforge\domain\Comment.class
 com\taleforge\security\JwtAuthenticationFilter.class
 com\taleforge\security\JwtService.class
@@ -27,6 +30,7 @@ com\taleforge\controller\UserController.class
 com\taleforge\TaleForgeApplication.class
 com\taleforge\repository\LikeRepository.class
 com\taleforge\service\StoryService.class
+com\taleforge\controller\CommentController.class
 com\taleforge\domain\StoryNode.class
 com\taleforge\config\DataInitializer.class
 com\taleforge\repository\UserRepository.class

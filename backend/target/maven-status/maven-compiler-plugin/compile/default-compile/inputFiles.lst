@@ -1,3 +1,4 @@
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\repository\CommentRepository.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\controller\LikeController.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\dto\StoryDTO.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\exception\UnauthorizedException.java
@@ -27,4 +28,6 @@ E:\Projects\TaleForge\backend\src\main\java\com\taleforge\TaleForgeApplication.j
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\domain\Story.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\config\SecurityConfig.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\controller\StoryController.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\controller\CommentController.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\security\CustomUserDetailsService.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\service\CommentService.java
