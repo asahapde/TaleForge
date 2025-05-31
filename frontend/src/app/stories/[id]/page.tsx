@@ -4,7 +4,7 @@ import api from "@/config/api";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Story {
   id: number;
@@ -46,6 +46,7 @@ export default function StoryDetailPage() {
   const { user, loading: authLoading } = useAuth();
   const [isLiking, setIsLiking] = useState(false);
   const [hasLiked, setHasLiked] = useState(false);
+  const viewCounted = useRef(false);
 
   useEffect(() => {
     const fetchStory = async () => {
@@ -78,6 +79,31 @@ export default function StoryDetailPage() {
 
     if (id) fetchStory();
   }, [id, user]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const incrementView = async () => {
+      if (!id || !story) return;
+
+      try {
+        const viewResponse = await api.post(`/stories/${id}/view`);
+        if (isMounted) {
+          setStory((prev) =>
+            prev ? { ...prev, views: viewResponse.data.views } : null
+          );
+        }
+      } catch (viewErr) {
+        console.error("Failed to increment view count:", viewErr);
+      }
+    };
+
+    incrementView();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id, story?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
