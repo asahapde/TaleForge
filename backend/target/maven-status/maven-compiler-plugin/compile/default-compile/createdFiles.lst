@@ -1,0 +1,12 @@
+com\taleforge\domain\Story.class
+com\taleforge\config\SecurityConfig.class
+com\taleforge\service\RatingService.class
+com\taleforge\service\UserService.class
+com\taleforge\controller\UserController.class
+com\taleforge\domain\Rating.class
+com\taleforge\TaleForgeApplication.class
+com\taleforge\repository\RatingRepository.class
+com\taleforge\domain\Comment.class
+com\taleforge\domain\StoryNode.class
+com\taleforge\repository\UserRepository.class
+com\taleforge\domain\User.class

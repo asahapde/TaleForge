@@ -1,0 +1,12 @@
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\domain\Comment.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\domain\Rating.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\service\RatingService.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\repository\RatingRepository.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\domain\StoryNode.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\domain\User.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\repository\UserRepository.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\service\UserService.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\TaleForgeApplication.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\controller\UserController.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\domain\Story.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\config\SecurityConfig.java
