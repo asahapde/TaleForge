@@ -245,27 +245,46 @@ export default function Comments({ storyId }: CommentsProps) {
             ) : (
               <>
                 <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-medium">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">
                       {comment.author.displayName || comment.author.username}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs text-gray-500 whitespace-nowrap">
                       {formatDate(comment.createdAt)}
                     </p>
                   </div>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center gap-1 ml-2 shrink-0">
+                    {user && user.id === comment.author.id && (
+                      <>
+                        <button
+                          onClick={() => {
+                            setEditingCommentId(comment.id);
+                            setEditContent(comment.content);
+                          }}
+                          className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(comment.id)}
+                          className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
                     <button
                       onClick={() => handleLike(comment.id)}
-                      className={`flex items-center space-x-1 ${
-                        comment.liked
-                          ? "text-indigo-600"
-                          : "text-gray-500 hover:text-indigo-600"
-                      } transition-colors duration-200`}
                       disabled={
                         !user ||
                         user.id === comment.author.id ||
                         isLiking === comment.id
                       }
+                      className={`inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded ${
+                        comment.liked
+                          ? "text-red-700 bg-red-100 hover:bg-red-200"
+                          : "text-gray-700 bg-gray-100 hover:bg-gray-200"
+                      } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50`}
                       title={
                         !user
                           ? "Please log in to like comments"
@@ -274,45 +293,22 @@ export default function Comments({ storyId }: CommentsProps) {
                           : ""
                       }
                     >
-                      <div className="flex items-center">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className={`h-5 w-5 ${
-                            isLiking === comment.id ? "animate-pulse" : ""
-                          }`}
-                          viewBox="0 0 20 20"
-                          fill={comment.liked ? "currentColor" : "none"}
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                          />
-                        </svg>
-                        <span className="ml-1.5 text-sm">{comment.likes}</span>
-                      </div>
+                      <svg
+                        className={`h-4 w-4 mr-1.5 ${
+                          comment.liked ? "fill-current" : "fill-none"
+                        }`}
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                        />
+                      </svg>
+                      {comment.likes}
                     </button>
-                    {user && user.id === comment.author.id && (
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => {
-                            setEditingCommentId(comment.id);
-                            setEditContent(comment.content);
-                          }}
-                          className="text-sm text-gray-600 hover:text-gray-800"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(comment.id)}
-                          className="text-sm text-red-600 hover:text-red-800"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </div>
                 <p className="mt-2 text-gray-700 whitespace-pre-wrap">

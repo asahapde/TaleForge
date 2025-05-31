@@ -47,6 +47,8 @@ export default function StoryDetailPage() {
   const { user, loading: authLoading } = useAuth();
   const [isLiking, setIsLiking] = useState(false);
   const [hasLiked, setHasLiked] = useState(false);
+  const [isUnpublishing, setIsUnpublishing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const viewCounted = useRef(false);
 
   useEffect(() => {
@@ -188,10 +190,15 @@ export default function StoryDetailPage() {
       return;
     }
 
+    if (user.id === story?.author.id) {
+      setError("Cannot like your own story");
+      return;
+    }
+
     try {
       setIsLiking(true);
       if (hasLiked) {
-        await api.delete(`/likes/stories/${id}`);
+        await api.delete(`/stories/${id}/like`);
         setHasLiked(false);
         setStory((prev) =>
           prev
@@ -202,13 +209,13 @@ export default function StoryDetailPage() {
             : null
         );
       } else {
-        await api.post(`/likes/stories/${id}`);
+        const response = await api.post(`/stories/${id}/like`);
         setHasLiked(true);
         setStory((prev) =>
           prev
             ? {
                 ...prev,
-                likes: prev.likes + 1,
+                likes: response.data.likes,
               }
             : null
         );
@@ -232,6 +239,7 @@ export default function StoryDetailPage() {
     }
 
     try {
+      setIsUnpublishing(true);
       const response = await api.post(
         `/stories/${id}/${story.published ? "unpublish" : "publish"}`
       );
@@ -250,6 +258,8 @@ export default function StoryDetailPage() {
       } else {
         setError("Failed to publish story. Please try again.");
       }
+    } finally {
+      setIsUnpublishing(false);
     }
   };
 
@@ -268,6 +278,7 @@ export default function StoryDetailPage() {
     }
 
     try {
+      setIsDeleting(true);
       await api.delete(`/stories/${id}`);
       setSuccess("Story deleted successfully!");
       router.push("/stories");
@@ -280,6 +291,8 @@ export default function StoryDetailPage() {
       } else {
         setError("Failed to delete story. Please try again.");
       }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -315,32 +328,6 @@ export default function StoryDetailPage() {
         <Link href="/stories" className="text-indigo-600 hover:underline">
           ← Back to Stories
         </Link>
-        {isAuthor && !isEditing && (
-          <div className="flex gap-2">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="text-sm px-3 py-1 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200"
-            >
-              Edit
-            </button>
-            <button
-              onClick={() => handlePublish()}
-              className={`text-sm px-3 py-1 rounded-lg ${
-                story.published
-                  ? "bg-green-100 text-green-800 hover:bg-green-200"
-                  : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-              }`}
-            >
-              {story.published ? "Unpublish" : "Publish"}
-            </button>
-            <button
-              onClick={() => handleDelete()}
-              className="text-sm px-3 py-1 bg-red-100 text-red-800 rounded-lg hover:bg-red-200"
-            >
-              Delete
-            </button>
-          </div>
-        )}
       </div>
 
       {success && (
@@ -500,8 +487,76 @@ export default function StoryDetailPage() {
         </form>
       ) : (
         <>
-          <h1 className="text-3xl font-bold mb-2">{story.title}</h1>
-          <p className="text-lg mb-6">{story.description}</p>
+          <div className="flex justify-between items-start">
+            <div className="flex-1 min-w-0 pr-4">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
+                {story.title}
+              </h1>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {user && user.id === story.author.id && (
+                <>
+                  <Link
+                    href={`/stories/${story.id}/edit`}
+                    className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Edit
+                  </Link>
+                  <button
+                    onClick={handlePublish}
+                    disabled={isUnpublishing}
+                    className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-yellow-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50"
+                  >
+                    {story.published ? "Unpublish" : "Publish"}
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
+              <button
+                onClick={handleLike}
+                disabled={!user || user.id === story.author.id || isLiking}
+                className={`inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded ${
+                  hasLiked
+                    ? "text-red-700 bg-red-100 hover:bg-red-200"
+                    : "text-gray-700 bg-gray-100 hover:bg-gray-200"
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50`}
+                title={
+                  !user
+                    ? "Please log in to like stories"
+                    : user.id === story.author.id
+                    ? "Cannot like your own story"
+                    : ""
+                }
+              >
+                <svg
+                  className={`h-4 w-4 mr-1.5 ${
+                    hasLiked ? "fill-current" : "fill-none"
+                  }`}
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                  />
+                </svg>
+                {story.likes}
+              </button>
+            </div>
+          </div>
+
+          <p className="text-base sm:text-lg mt-4 mb-6 text-gray-700">
+            {story.description}
+          </p>
+
           <div className="flex flex-wrap gap-2 mb-6">
             {story.tags.map((tag) => (
               <span
@@ -513,10 +568,10 @@ export default function StoryDetailPage() {
             ))}
           </div>
           <div
-            className="prose max-w-none break-words mb-8"
+            className="prose prose-sm sm:prose-base max-w-none break-words mb-8"
             dangerouslySetInnerHTML={{ __html: story.content }}
           />
-          <div className="flex justify-between items-center text-sm text-gray-500 pt-4 border-t border-gray-100">
+          <div className="flex justify-between items-center text-xs sm:text-sm text-gray-500 pt-4 border-t border-gray-100">
             <div className="flex-1 min-w-0">
               <span className="truncate block">
                 By {story.author.displayName || story.author.username}
@@ -566,33 +621,6 @@ export default function StoryDetailPage() {
                 {story.likes}
               </span>
             </div>
-            {user && user.id !== story.author.id && (
-              <button
-                onClick={handleLike}
-                disabled={isLiking || hasLiked}
-                className={`flex items-center gap-2 px-3 py-1 rounded-lg transition-colors ml-4 text-sm ${
-                  hasLiked
-                    ? "bg-red-100 text-red-600"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                <svg
-                  className={`h-4 w-4 ${
-                    hasLiked ? "fill-current" : "fill-none"
-                  }`}
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  />
-                </svg>
-                {hasLiked ? "Liked" : "Like"}
-              </button>
-            )}
           </div>
 
           <Comments storyId={story.id} />

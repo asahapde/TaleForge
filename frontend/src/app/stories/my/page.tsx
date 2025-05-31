@@ -292,7 +292,7 @@ export default function MyStoriesPage() {
                       <div className="flex space-x-2">
                         <Link
                           href={`/stories/edit/${story.id}`}
-                          className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                          className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
                           Edit
                         </Link>
