@@ -145,12 +145,6 @@ export default function MyStoriesPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-4">
         <div className="flex justify-between items-center mb-3">
           <h1 className="text-xl font-semibold text-gray-900">My Stories</h1>
-          <Link
-            href="/stories/create"
-            className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg text-white bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 transition-all duration-300 shadow-sm hover:shadow"
-          >
-            Create New Story
-          </Link>
         </div>
 
         {/* Search and filter bar */}

@@ -88,151 +88,93 @@ export default function CreateStoryPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-          Create a New Story
-        </h1>
-        <p className="text-sm text-gray-500">
-          Share your tale with the world. Make it engaging and memorable.
-        </p>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative mb-6">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label
-            htmlFor="title"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Title (min. 3 characters)
-          </label>
-          <input
-            type="text"
-            name="title"
-            id="title"
-            required
-            minLength={3}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            placeholder="Enter a captivating title"
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="description"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Description (min. 10 characters)
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            rows={3}
-            required
-            minLength={10}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            placeholder="Give a brief overview of your story"
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="content"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Content (min. 50 characters)
-          </label>
-          <textarea
-            id="content"
-            name="content"
-            rows={15}
-            required
-            minLength={50}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-mono"
-            placeholder="Write your story here..."
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="tags"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Tags (comma-separated)
-          </label>
-          <input
-            type="text"
-            name="tags"
-            id="tags"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder="fantasy, adventure, mystery"
-            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            Add tags to help readers find your story
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 py-8">
+      <div className="w-full max-w-2xl bg-white border border-gray-200 rounded-xl p-8">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Create a New Story
+          </h1>
+          <p className="text-gray-500 text-base">
+            Share your imagination with the world.
           </p>
         </div>
-
-        <div className="flex justify-end space-x-3">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
-              loading
-                ? "bg-indigo-400 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            }`}
-          >
-            {loading ? (
-              <>
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Creating...
-              </>
-            ) : (
-              "Create Story"
-            )}
-          </button>
-        </div>
-      </form>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-base font-semibold text-gray-800 mb-1">
+              Title
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter your story title..."
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition bg-gray-50"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-semibold text-gray-800 mb-1">
+              Description
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="A short summary of your story..."
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition bg-gray-50 min-h-[60px]"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-semibold text-gray-800 mb-1">
+              Content
+            </label>
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Write your story here..."
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base font-mono focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition bg-gray-50 min-h-[180px]"
+              rows={10}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-semibold text-gray-800 mb-1">
+              Tags
+            </label>
+            <input
+              type="text"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="e.g. fantasy, adventure, magic"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition bg-gray-50"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Separate tags with commas.
+            </p>
+          </div>
+          {error && (
+            <div className="text-red-600 text-center font-medium py-2 bg-red-50 rounded-lg border border-red-200">
+              {error}
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="px-4 py-2 rounded bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 rounded bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold shadow-sm hover:from-indigo-700 hover:to-indigo-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 text-sm"
+              disabled={loading}
+            >
+              {loading ? "Creating..." : "Create Story"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
