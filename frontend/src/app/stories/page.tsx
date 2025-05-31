@@ -31,7 +31,6 @@ interface PageResponse {
 }
 
 export default function StoriesPage() {
-  const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sortBy, setSortBy] = useState("newest");
@@ -44,6 +43,8 @@ export default function StoriesPage() {
   const { user } = useAuth();
   const [filteredStories, setFilteredStories] = useState<Story[]>([]);
   const [allStories, setAllStories] = useState<Story[]>([]);
+  const [topTags, setTopTags] = useState<{ tag: string; count: number }[]>([]);
+  const STORIES_PER_PAGE = 9;
 
   useEffect(() => {
     const tag = searchParams?.get("tag");
@@ -58,6 +59,22 @@ export default function StoriesPage() {
 
   useEffect(() => {
     if (!allStories) return;
+
+    // Calculate tag frequencies
+    const tagCounts = new Map<string, number>();
+    allStories.forEach((story) => {
+      story.tags.forEach((tag) => {
+        tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+      });
+    });
+
+    // Convert to array and sort by count
+    const sortedTags = Array.from(tagCounts.entries())
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    setTopTags(sortedTags);
 
     let filtered = allStories.filter((story) => story.published);
 
@@ -75,7 +92,10 @@ export default function StoriesPage() {
         (story) =>
           story.title.toLowerCase().includes(searchLower) ||
           story.description.toLowerCase().includes(searchLower) ||
-          story.tags.some((tag) => tag.toLowerCase().includes(searchLower))
+          story.tags.some((tag) => tag.toLowerCase().includes(searchLower)) ||
+          (story.author.displayName || story.author.username)
+            .toLowerCase()
+            .includes(searchLower)
       );
     }
 
@@ -100,7 +120,7 @@ export default function StoriesPage() {
     });
 
     setFilteredStories(filtered);
-    setTotalPages(Math.ceil(filtered.length / 10));
+    setTotalPages(Math.ceil(filtered.length / STORIES_PER_PAGE));
   }, [allStories, filterTag, searchQuery, sortBy]);
 
   const fetchStories = async () => {
@@ -169,7 +189,10 @@ export default function StoriesPage() {
   };
 
   // Get current page of stories
-  const currentPageStories = filteredStories.slice(page * 10, (page + 1) * 10);
+  const currentPageStories = filteredStories.slice(
+    page * STORIES_PER_PAGE,
+    (page + 1) * STORIES_PER_PAGE
+  );
 
   if (loading) {
     return (
@@ -202,8 +225,37 @@ export default function StoriesPage() {
       </div>
 
       <div className="mb-8 space-y-4">
+        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">
+            Popular Tags
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {topTags.map(({ tag, count }) => (
+              <button
+                key={tag}
+                onClick={() => handleTagFilter(tag)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                  filterTag === tag
+                    ? "bg-indigo-600 text-white shadow-md hover:bg-indigo-700"
+                    : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
+                }`}
+              >
+                <span>#{tag}</span>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-xs ${
+                    filterTag === tag
+                      ? "bg-indigo-500 text-white"
+                      : "bg-gray-200 text-gray-600"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="relative">
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
             <div className="relative flex-1">
               <input
                 type="text"
@@ -215,10 +267,10 @@ export default function StoriesPage() {
                     handleSearch(e);
                   }
                 }}
-                placeholder="Search stories by title or description..."
-                className="w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pl-10 pr-4 py-2 text-base"
+                placeholder="Search by title, description, tags, or author..."
+                className="w-full rounded-xl border-gray-200 bg-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pl-12 pr-4 py-3 text-base transition-all duration-200"
               />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <svg
                   className="h-5 w-5 text-gray-400"
                   viewBox="0 0 20 20"
@@ -233,11 +285,11 @@ export default function StoriesPage() {
               </div>
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={handleClearSearch}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center hover:text-gray-600 transition-colors"
                 >
                   <svg
-                    className="h-5 w-5 text-gray-400 hover:text-gray-600"
+                    className="h-5 w-5 text-gray-400"
                     viewBox="0 0 20 20"
                     fill="currentColor"
                   >
@@ -252,15 +304,26 @@ export default function StoriesPage() {
             </div>
             <button
               onClick={handleSearch}
-              className="ml-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
             >
               Search
             </button>
           </div>
           {searchQuery && (
-            <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg">
-              <div className="py-1">
-                <div className="px-4 py-2 text-sm text-gray-700">
+            <div className="absolute z-10 mt-2 w-full bg-white rounded-xl shadow-lg border border-gray-100">
+              <div className="py-2">
+                <div className="px-4 py-2 text-sm text-gray-700 flex items-center gap-2">
+                  <svg
+                    className="h-4 w-4 text-gray-400"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                   Searching for: "{searchQuery}"
                 </div>
               </div>
@@ -288,44 +351,11 @@ export default function StoriesPage() {
               >
                 <path
                   fillRule="evenodd"
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 101.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
                   clipRule="evenodd"
                 />
               </svg>
             </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => handleTagFilter("fantasy")}
-              className={`px-3 py-1 rounded-full text-sm transition-colors duration-200 ${
-                filterTag === "fantasy"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-              }`}
-            >
-              #fantasy
-            </button>
-            <button
-              onClick={() => handleTagFilter("adventure")}
-              className={`px-3 py-1 rounded-full text-sm transition-colors duration-200 ${
-                filterTag === "adventure"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-              }`}
-            >
-              #adventure
-            </button>
-            <button
-              onClick={() => handleTagFilter("mystery")}
-              className={`px-3 py-1 rounded-full text-sm transition-colors duration-200 ${
-                filterTag === "mystery"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-              }`}
-            >
-              #mystery
-            </button>
           </div>
         </div>
       </div>
@@ -423,28 +453,57 @@ export default function StoriesPage() {
       )}
 
       {totalPages > 1 && (
-        <div className="flex justify-center mt-8 gap-2">
+        <div className="flex justify-center mt-12 gap-3">
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
-            className={`px-4 py-2 rounded-md ${
+            className={`px-6 py-2.5 rounded-xl font-medium transition-all duration-200 flex items-center gap-2 ${
               page === 0
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 text-white hover:bg-indigo-700"
+                ? "bg-gray-50 text-gray-400 cursor-not-allowed border border-gray-200"
+                : "bg-white text-indigo-600 hover:bg-indigo-50 border border-indigo-200 hover:border-indigo-300 shadow-sm hover:shadow"
             }`}
           >
+            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fillRule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
             Previous
           </button>
+          <div className="flex items-center gap-2">
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => setPage(i)}
+                className={`w-10 h-10 rounded-lg font-medium transition-all duration-200 ${
+                  page === i
+                    ? "bg-indigo-600 text-white shadow-md"
+                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
           <button
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={page === totalPages - 1}
-            className={`px-4 py-2 rounded-md ${
+            className={`px-6 py-2.5 rounded-xl font-medium transition-all duration-200 flex items-center gap-2 ${
               page === totalPages - 1
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 text-white hover:bg-indigo-700"
+                ? "bg-gray-50 text-gray-400 cursor-not-allowed border border-gray-200"
+                : "bg-white text-indigo-600 hover:bg-indigo-50 border border-indigo-200 hover:border-indigo-300 shadow-sm hover:shadow"
             }`}
           >
             Next
+            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fillRule="evenodd"
+                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
           </button>
         </div>
       )}
