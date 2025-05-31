@@ -161,8 +161,11 @@ public class StoryController {
         try {
             log.info("Fetching stories for author with id: {}", authorId);
             List<Story> stories = storyService.getStoriesByAuthor(authorId);
+            List<StoryDTO> storyDTOs = stories.stream()
+                .map(storyService::convertToDTO)
+                .collect(Collectors.toList());
             log.info("Successfully fetched {} stories for author {}", stories.size(), authorId);
-            return ResponseEntity.ok(stories);
+            return ResponseEntity.ok(storyDTOs);
         } catch (Exception e) {
             log.error("Error fetching stories for author {}: ", authorId, e);
             return ResponseEntity.internalServerError().body("Error fetching stories: " + e.getMessage());

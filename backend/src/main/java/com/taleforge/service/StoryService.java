@@ -151,7 +151,8 @@ public class StoryService {
         }
 
         story.setPublished(true);
-        return convertToDTO(storyRepository.save(story));
+        Story savedStory = storyRepository.save(story);
+        return convertToDTO(savedStory);
     }
 
     @Transactional
@@ -164,11 +165,12 @@ public class StoryService {
         }
 
         story.setPublished(false);
-        return convertToDTO(storyRepository.save(story));
+        Story savedStory = storyRepository.save(story);
+        return convertToDTO(savedStory);
     }
 
     @Transactional(readOnly = true)
-    private StoryDTO convertToDTO(Story story) {
+    public StoryDTO convertToDTO(Story story) {
         if (story == null) {
             throw new IllegalArgumentException("Story cannot be null");
         }
