@@ -1,22 +1,25 @@
 package com.taleforge.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-@Data
 @Entity
-@NoArgsConstructor
 @Table(name = "stories")
-@EntityListeners(AuditingEntityListener.class)
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Story {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,36 +28,45 @@ public class Story {
     @Column(nullable = false)
     private String title;
 
-    @Column(length = 1000)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "author_id", nullable = false)
+    @JsonBackReference(value = "author-stories")
     private User author;
 
-    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<StoryNode> nodes = new HashSet<>();
-
-    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Comment> comments = new HashSet<>();
-
-    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Rating> ratings = new HashSet<>();
-
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
-    @Column(nullable = false)
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @Column(nullable = false)
-    private boolean published = false;
+    private boolean published;
 
     @Column(nullable = false)
-    private double averageRating = 0.0;
+    private int views;
 
     @Column(nullable = false)
-    private int totalRatings = 0;
+    private double rating;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "story_tags", joinColumns = @JoinColumn(name = "story_id"))
+    @Column(name = "tag")
+    private Set<String> tags = new HashSet<>();
+
+    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference(value = "story-nodes")
+    private Set<StoryNode> nodes = new HashSet<>();
+
+    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference(value = "story-comments")
+    private Set<Comment> comments = new HashSet<>();
+
+    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference(value = "story-ratings")
+    private Set<Rating> ratings = new HashSet<>();
 } 

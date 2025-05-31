@@ -1,83 +1,159 @@
+"use client";
+
+import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
-export default function Home() {
+const categories = [
+  { name: "Fantasy", icon: "✨" },
+  { name: "Romance", icon: "❤️" },
+  { name: "Mystery", icon: "🔍" },
+  { name: "Sci-Fi", icon: "🚀" },
+  { name: "Horror", icon: "👻" },
+  { name: "Adventure", icon: "🗺️" },
+];
+
+const featuredStories = [
+  {
+    id: 1,
+    title: "The Last Spellweaver",
+    author: "Sarah Blackwood",
+    cover: "/covers/story1.jpg",
+    description:
+      "In a world where magic is fading, one young woman discovers she holds the key to restoring it.",
+    reads: "1.2M",
+    votes: "45K",
+  },
+  // Add more stories here
+];
+
+export default function HomePage() {
+  const [activeCategory, setActiveCategory] = useState("All");
+
   return (
-    <div className="relative isolate">
-      {/* Background gradient */}
-      <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
-        <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" />
-      </div>
-
-      {/* Hero section */}
-      <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl">
-            Craft Your Story's Destiny
-          </h1>
-          <p className="mt-6 text-lg leading-8 text-gray-600 dark:text-gray-300">
-            Create interactive stories with branching narratives. Let your
-            readers shape the journey and build a community around your tales.
-          </p>
-          <div className="mt-10 flex items-center justify-center gap-x-6">
-            <Link
-              href="/stories/create"
-              className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              Start Writing
-            </Link>
-            <Link
-              href="/stories"
-              className="text-sm font-semibold leading-6 text-gray-900 dark:text-white"
-            >
-              Explore Stories <span aria-hidden="true">→</span>
-            </Link>
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <div className="relative bg-indigo-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+          <div className="text-center">
+            <h1 className="text-4xl font-extrabold sm:text-5xl md:text-6xl">
+              Discover Stories That Matter
+            </h1>
+            <p className="mt-3 max-w-md mx-auto text-base sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
+              Join millions of readers and writers on TaleForge, where stories
+              come to life.
+            </p>
+            <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
+              <div className="rounded-md shadow">
+                <Link
+                  href="/stories"
+                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10"
+                >
+                  Start Reading
+                </Link>
+              </div>
+              <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
+                <Link
+                  href="/create"
+                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
+                >
+                  Start Writing
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Feature section */}
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl lg:text-center">
-          <h2 className="text-base font-semibold leading-7 text-indigo-600">
-            Interactive Storytelling
-          </h2>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-            Everything you need to create engaging stories
-          </p>
+      {/* Categories Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Categories</h2>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6">
+          {categories.map((category) => (
+            <button
+              key={category.name}
+              onClick={() => setActiveCategory(category.name)}
+              className={`p-4 rounded-lg text-center transition-colors ${
+                activeCategory === category.name
+                  ? "bg-indigo-100 text-indigo-700"
+                  : "bg-white hover:bg-gray-50"
+              }`}
+            >
+              <div className="text-2xl mb-2">{category.icon}</div>
+              <div className="font-medium">{category.name}</div>
+            </button>
+          ))}
         </div>
-        <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
-          <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
-            {features.map((feature) => (
-              <div key={feature.name} className="flex flex-col">
-                <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900 dark:text-white">
-                  {feature.name}
-                </dt>
-                <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600 dark:text-gray-300">
-                  <p className="flex-auto">{feature.description}</p>
-                </dd>
+      </div>
+
+      {/* Featured Stories Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">
+          Featured Stories
+        </h2>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {featuredStories.map((story) => (
+            <div
+              key={story.id}
+              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+            >
+              <div className="relative h-48">
+                <Image
+                  src={story.cover}
+                  alt={story.title}
+                  fill
+                  className="object-cover"
+                />
               </div>
-            ))}
-          </dl>
+              <div className="p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  {story.title}
+                </h3>
+                <p className="text-sm text-gray-600 mb-2">by {story.author}</p>
+                <p className="text-sm text-gray-500 mb-4 line-clamp-2">
+                  {story.description}
+                </p>
+                <div className="flex justify-between text-sm text-gray-500">
+                  <span>👁️ {story.reads} reads</span>
+                  <span>⭐ {story.votes} votes</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Trending Now Section */}
+      <div className="bg-gray-100 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            Trending Now
+          </h2>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Add trending stories here */}
+          </div>
+        </div>
+      </div>
+
+      {/* Call to Action */}
+      <div className="bg-indigo-700">
+        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
+          <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+            <span className="block">Ready to start your story?</span>
+            <span className="block text-indigo-200">Join TaleForge today.</span>
+          </h2>
+          <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
+            <div className="inline-flex rounded-md shadow">
+              <Link
+                href="/auth/register"
+                className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50"
+              >
+                Get started
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
-const features = [
-  {
-    name: "Branching Narratives",
-    description:
-      "Create multiple story paths and let your readers choose their own adventure.",
-  },
-  {
-    name: "Community Engagement",
-    description:
-      "Allow readers to submit their own story branches and vote on future directions.",
-  },
-  {
-    name: "Rich Media Support",
-    description:
-      "Enhance your stories with images, videos, and interactive elements.",
-  },
-];
