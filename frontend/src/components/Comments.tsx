@@ -12,6 +12,8 @@ interface Comment {
   };
   createdAt: string;
   updatedAt: string;
+  likes: number;
+  liked: boolean;
 }
 
 interface CommentsProps {
@@ -25,6 +27,7 @@ export default function Comments({ storyId }: CommentsProps) {
   const [error, setError] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [isLiking, setIsLiking] = useState<number | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -91,6 +94,52 @@ export default function Comments({ storyId }: CommentsProps) {
       setComments(comments.filter((comment) => comment.id !== commentId));
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to delete comment");
+    }
+  };
+
+  const handleLike = async (commentId: number) => {
+    if (!user) {
+      setError("Please log in to like comments");
+      return;
+    }
+
+    const comment = comments.find((c) => c.id === commentId);
+    if (!comment || user.id === comment.author.id) return;
+
+    try {
+      setIsLiking(commentId);
+      setError("");
+      if (comment.liked) {
+        await api.delete(`/comments/${commentId}/like`);
+        setComments(
+          comments.map((c) =>
+            c.id === commentId
+              ? {
+                  ...c,
+                  likes: c.likes - 1,
+                  liked: false,
+                }
+              : c
+          )
+        );
+      } else {
+        const response = await api.post(`/comments/${commentId}/like`);
+        setComments(
+          comments.map((c) =>
+            c.id === commentId
+              ? {
+                  ...c,
+                  likes: response.data.likes,
+                  liked: true,
+                }
+              : c
+          )
+        );
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to like comment");
+    } finally {
+      setIsLiking(null);
     }
   };
 
@@ -204,25 +253,67 @@ export default function Comments({ storyId }: CommentsProps) {
                       {formatDate(comment.createdAt)}
                     </p>
                   </div>
-                  {user && user.id === comment.author.id && (
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => {
-                          setEditingCommentId(comment.id);
-                          setEditContent(comment.content);
-                        }}
-                        className="text-sm text-gray-600 hover:text-gray-800"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(comment.id)}
-                        className="text-sm text-red-600 hover:text-red-800"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => handleLike(comment.id)}
+                      className={`flex items-center space-x-1 ${
+                        comment.liked
+                          ? "text-indigo-600"
+                          : "text-gray-500 hover:text-indigo-600"
+                      } transition-colors duration-200`}
+                      disabled={
+                        !user ||
+                        user.id === comment.author.id ||
+                        isLiking === comment.id
+                      }
+                      title={
+                        !user
+                          ? "Please log in to like comments"
+                          : user.id === comment.author.id
+                          ? "Cannot like your own comment"
+                          : ""
+                      }
+                    >
+                      <div className="flex items-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className={`h-5 w-5 ${
+                            isLiking === comment.id ? "animate-pulse" : ""
+                          }`}
+                          viewBox="0 0 20 20"
+                          fill={comment.liked ? "currentColor" : "none"}
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                          />
+                        </svg>
+                        <span className="ml-1.5 text-sm">{comment.likes}</span>
+                      </div>
+                    </button>
+                    {user && user.id === comment.author.id && (
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => {
+                            setEditingCommentId(comment.id);
+                            setEditContent(comment.content);
+                          }}
+                          className="text-sm text-gray-600 hover:text-gray-800"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(comment.id)}
+                          className="text-sm text-red-600 hover:text-red-800"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <p className="mt-2 text-gray-700 whitespace-pre-wrap">
                   {comment.content}

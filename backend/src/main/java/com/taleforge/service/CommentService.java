@@ -69,4 +69,38 @@ public class CommentService {
 
         commentRepository.delete(comment);
     }
+
+    @Transactional
+    public Comment likeComment(Long commentId, String username) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new EntityNotFoundException("Comment not found"));
+        
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        if (comment.getAuthor().getId().equals(user.getId())) {
+            throw new IllegalStateException("Cannot like your own comment");
+        }
+
+        comment.setLikes(comment.getLikes() + 1);
+        return commentRepository.save(comment);
+    }
+
+    @Transactional
+    public Comment unlikeComment(Long commentId, String username) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new EntityNotFoundException("Comment not found"));
+        
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        if (comment.getAuthor().getId().equals(user.getId())) {
+            throw new IllegalStateException("Cannot unlike your own comment");
+        }
+
+        if (comment.getLikes() > 0) {
+            comment.setLikes(comment.getLikes() - 1);
+        }
+        return commentRepository.save(comment);
+    }
 } 
