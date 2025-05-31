@@ -43,8 +43,7 @@ export default function StoriesPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const [filteredStories, setFilteredStories] = useState<Story[]>([]);
-  const [likedStories, setLikedStories] = useState<Set<number>>(new Set());
-  const [isLiking, setIsLiking] = useState<number | null>(null);
+  const [allStories, setAllStories] = useState<Story[]>([]);
 
   useEffect(() => {
     const tag = searchParams?.get("tag");
@@ -55,61 +54,61 @@ export default function StoriesPage() {
 
   useEffect(() => {
     fetchStories();
-  }, [sortBy, filterTag, page]);
+  }, []);
 
   useEffect(() => {
-    if (!stories) return;
+    if (!allStories) return;
 
-    const filtered = stories.filter((story) => {
-      const searchLower = searchQuery.toLowerCase();
-      return (
-        story.title.toLowerCase().includes(searchLower) ||
-        story.description.toLowerCase().includes(searchLower) ||
-        story.tags.some((tag) => tag.toLowerCase().includes(searchLower))
+    let filtered = allStories.filter((story) => story.published);
+
+    // Apply tag filter
+    if (filterTag) {
+      filtered = filtered.filter((story) =>
+        story.tags.some((tag) => tag.toLowerCase() === filterTag.toLowerCase())
       );
+    }
+
+    // Apply search filter
+    if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (story) =>
+          story.title.toLowerCase().includes(searchLower) ||
+          story.description.toLowerCase().includes(searchLower) ||
+          story.tags.some((tag) => tag.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "newest":
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        case "oldest":
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        case "likes":
+          return b.likes - a.likes;
+        case "views":
+          return b.views - a.views;
+        default:
+          return 0;
+      }
     });
+
     setFilteredStories(filtered);
-  }, [stories, searchQuery]);
+    setTotalPages(Math.ceil(filtered.length / 10));
+  }, [allStories, filterTag, searchQuery, sortBy]);
 
   const fetchStories = async () => {
     try {
       setLoading(true);
       setError("");
-
-      let url = `/stories?page=${page}&size=10`;
-
-      if (sortBy === "newest") {
-        url += "&sort=createdAt,desc";
-      } else if (sortBy === "oldest") {
-        url += "&sort=createdAt,asc";
-      } else if (sortBy === "likes") {
-        url += "&sort=likes,desc";
-      } else if (sortBy === "views") {
-        url += "&sort=views,desc";
-      }
-
-      if (filterTag) {
-        url += `&tag=${encodeURIComponent(filterTag)}`;
-      }
-
-      const response = await api.get<PageResponse>(url);
-      setStories(response.data.content);
-      setTotalPages(response.data.totalPages);
-
-      // Fetch like status for each story
-      if (user) {
-        const likeStatusPromises = response.data.content.map((story) =>
-          api.get(`/likes/stories/${story.id}/status`)
-        );
-        const likeStatuses = await Promise.all(likeStatusPromises);
-        setLikedStories(
-          new Set(
-            likeStatuses
-              .filter((status) => status.data.liked)
-              .map((status) => status.data.id)
-          )
-        );
-      }
+      const response = await api.get<PageResponse>(`/stories?size=1000`);
+      setAllStories(response.data.content);
     } catch (err: any) {
       setError(
         err.response?.data?.message || err.message || "Failed to fetch stories"
@@ -125,9 +124,20 @@ export default function StoriesPage() {
   };
 
   const handleTagFilter = (tag: string) => {
-    setFilterTag(tag === filterTag ? "" : tag);
+    const newTag = tag === filterTag ? "" : tag;
+    setFilterTag(newTag);
     setPage(0);
-    router.push(tag === filterTag ? "/stories" : `/stories?tag=${tag}`);
+    router.push(newTag ? `/stories?tag=${newTag}` : "/stories");
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPage(0);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setPage(0);
   };
 
   const formatDate = (dateString: string) => {
@@ -138,62 +148,28 @@ export default function StoriesPage() {
         return "Invalid date";
       }
 
+      // Convert to EST
+      const estDate = new Date(
+        date.toLocaleString("en-US", {
+          timeZone: "America/New_York",
+        })
+      );
+
       return new Intl.DateTimeFormat("en-US", {
         month: "short",
         day: "numeric",
         hour: "2-digit",
         minute: "2-digit",
         hour12: true,
-      }).format(date);
+        timeZone: "America/New_York",
+      }).format(estDate);
     } catch (error) {
       return "Invalid date";
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(0); // Reset to first page when searching
-    fetchStories();
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery("");
-    setPage(0);
-    fetchStories();
-  };
-
-  const handleLike = async (storyId: number) => {
-    if (!user) {
-      setError("Please log in to like stories");
-      return;
-    }
-
-    try {
-      const hasLiked = likedStories.has(storyId);
-      if (hasLiked) {
-        await api.delete(`/likes/stories/${storyId}`);
-        setLikedStories((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(storyId);
-          return newSet;
-        });
-      } else {
-        await api.post(`/likes/stories/${storyId}`);
-        setLikedStories((prev) => new Set(prev).add(storyId));
-      }
-
-      // Update the story's like count in the list
-      setStories((prev) =>
-        prev.map((story) =>
-          story.id === storyId
-            ? { ...story, likes: hasLiked ? story.likes - 1 : story.likes + 1 }
-            : story
-        )
-      );
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to update like status");
-    }
-  };
+  // Get current page of stories
+  const currentPageStories = filteredStories.slice(page * 10, (page + 1) * 10);
 
   if (loading) {
     return (
@@ -354,8 +330,8 @@ export default function StoriesPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredStories.map((story) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {currentPageStories.map((story) => (
           <div
             key={story.id}
             className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full"
@@ -418,23 +394,10 @@ export default function StoriesPage() {
                     {story.views}
                   </span>
                   <span>•</span>
-                  <button
-                    onClick={() => handleLike(story.id)}
-                    disabled={isLiking === story.id}
-                    className={`flex items-center gap-1 ${
-                      likedStories.has(story.id)
-                        ? "text-red-500 hover:text-red-600"
-                        : "text-gray-500 hover:text-red-500"
-                    }`}
-                  >
+                  <span className="flex items-center gap-1">
                     <svg
-                      className={`h-4 w-4 ${
-                        isLiking === story.id ? "animate-pulse" : ""
-                      }`}
-                      fill={
-                        likedStories.has(story.id) ? "currentColor" : "none"
-                      }
-                      stroke="currentColor"
+                      className="h-4 w-4"
+                      fill="currentColor"
                       viewBox="0 0 24 24"
                     >
                       <path
@@ -445,7 +408,7 @@ export default function StoriesPage() {
                       />
                     </svg>
                     {story.likes}
-                  </button>
+                  </span>
                 </div>
               </div>
             </div>

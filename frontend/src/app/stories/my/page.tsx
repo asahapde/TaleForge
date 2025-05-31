@@ -235,6 +235,16 @@ export default function MyStoriesPage() {
                         {story.description}
                       </p>
                     </div>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {story.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
                     <div className="flex justify-between items-center text-sm text-gray-500 mt-auto">
                       <div className="flex items-center gap-2 whitespace-nowrap">
                         <span className="flex items-center gap-1">
