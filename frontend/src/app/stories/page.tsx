@@ -43,6 +43,8 @@ export default function StoriesPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const [filteredStories, setFilteredStories] = useState<Story[]>([]);
+  const [likedStories, setLikedStories] = useState<Set<number>>(new Set());
+  const [isLiking, setIsLiking] = useState<number | null>(null);
 
   useEffect(() => {
     const tag = searchParams?.get("tag");
@@ -74,14 +76,14 @@ export default function StoriesPage() {
       setLoading(true);
       setError("");
 
-      let url = `/api/stories?page=${page}&size=10`;
+      let url = `/stories?page=${page}&size=10`;
 
       if (sortBy === "newest") {
         url += "&sort=createdAt,desc";
       } else if (sortBy === "oldest") {
         url += "&sort=createdAt,asc";
-      } else if (sortBy === "rating") {
-        url += "&sort=rating,desc";
+      } else if (sortBy === "likes") {
+        url += "&sort=likes,desc";
       } else if (sortBy === "views") {
         url += "&sort=views,desc";
       }
@@ -93,6 +95,21 @@ export default function StoriesPage() {
       const response = await api.get<PageResponse>(url);
       setStories(response.data.content);
       setTotalPages(response.data.totalPages);
+
+      // Fetch like status for each story
+      if (user) {
+        const likeStatusPromises = response.data.content.map((story) =>
+          api.get(`/likes/stories/${story.id}/status`)
+        );
+        const likeStatuses = await Promise.all(likeStatusPromises);
+        setLikedStories(
+          new Set(
+            likeStatuses
+              .filter((status) => status.data.liked)
+              .map((status) => status.data.id)
+          )
+        );
+      }
     } catch (err: any) {
       setError(
         err.response?.data?.message || err.message || "Failed to fetch stories"
@@ -143,6 +160,39 @@ export default function StoriesPage() {
     setSearchQuery("");
     setPage(0);
     fetchStories();
+  };
+
+  const handleLike = async (storyId: number) => {
+    if (!user) {
+      setError("Please log in to like stories");
+      return;
+    }
+
+    try {
+      const hasLiked = likedStories.has(storyId);
+      if (hasLiked) {
+        await api.delete(`/likes/stories/${storyId}`);
+        setLikedStories((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(storyId);
+          return newSet;
+        });
+      } else {
+        await api.post(`/likes/stories/${storyId}`);
+        setLikedStories((prev) => new Set(prev).add(storyId));
+      }
+
+      // Update the story's like count in the list
+      setStories((prev) =>
+        prev.map((story) =>
+          story.id === storyId
+            ? { ...story, likes: hasLiked ? story.likes - 1 : story.likes + 1 }
+            : story
+        )
+      );
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to update like status");
+    }
   };
 
   if (loading) {
@@ -251,7 +301,7 @@ export default function StoriesPage() {
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
-              <option value="rating">Highest Rated</option>
+              <option value="likes">Most Liked</option>
               <option value="views">Most Viewed</option>
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
@@ -368,10 +418,22 @@ export default function StoriesPage() {
                     {story.views}
                   </span>
                   <span>•</span>
-                  <span className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleLike(story.id)}
+                    disabled={isLiking === story.id}
+                    className={`flex items-center gap-1 ${
+                      likedStories.has(story.id)
+                        ? "text-red-500 hover:text-red-600"
+                        : "text-gray-500 hover:text-red-500"
+                    }`}
+                  >
                     <svg
-                      className="h-4 w-4"
-                      fill="none"
+                      className={`h-4 w-4 ${
+                        isLiking === story.id ? "animate-pulse" : ""
+                      }`}
+                      fill={
+                        likedStories.has(story.id) ? "currentColor" : "none"
+                      }
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
@@ -383,7 +445,7 @@ export default function StoriesPage() {
                       />
                     </svg>
                     {story.likes}
-                  </span>
+                  </button>
                 </div>
               </div>
             </div>

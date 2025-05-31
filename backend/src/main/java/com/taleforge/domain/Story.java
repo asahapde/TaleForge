@@ -42,30 +42,37 @@ public class Story {
     private User author;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean published = false;
 
     @Column(nullable = false)
+    @Builder.Default
     private int views = 0;
 
     @Column(nullable = false)
-    private double rating = 0.0;
+    @Builder.Default
+    private int likes = 0;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "story_tags", joinColumns = @JoinColumn(name = "story_id"))
     @Column(name = "tag")
+    @Builder.Default
     private Set<String> tags = new HashSet<>();
 
     @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference(value = "story-nodes")
+    @Builder.Default
     private Set<StoryNode> nodes = new HashSet<>();
 
     @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference(value = "story-comments")
+    @Builder.Default
     private Set<Comment> comments = new HashSet<>();
 
     @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JsonManagedReference(value = "story-ratings")
-    private Set<Rating> ratings = new HashSet<>();
+    @JsonManagedReference(value = "story-likes")
+    @Builder.Default
+    private Set<Like> likesSet = new HashSet<>();
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

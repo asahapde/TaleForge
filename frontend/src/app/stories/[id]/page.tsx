@@ -52,13 +52,21 @@ export default function StoryDetailPage() {
       try {
         setLoading(true);
         setError("");
-        const response = await api.get(`/api/stories/${id}`);
+        const response = await api.get(`/stories/${id}`);
         const storyData = response.data;
         setStory(storyData);
         setTitle(storyData.title);
         setDescription(storyData.description);
         setContent(storyData.content);
         setTags(storyData.tags.join(", "));
+
+        // Check if user has liked the story
+        if (user) {
+          const likeStatusResponse = await api.get(
+            `/likes/stories/${id}/status`
+          );
+          setHasLiked(likeStatusResponse.data);
+        }
       } catch (err: any) {
         setError(
           err.response?.data?.message || err.message || "Failed to fetch story"
@@ -69,7 +77,7 @@ export default function StoryDetailPage() {
     };
 
     if (id) fetchStory();
-  }, [id]);
+  }, [id, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +115,7 @@ export default function StoryDetailPage() {
           .filter((tag) => tag.length > 0),
       };
 
-      const response = await api.put(`/api/stories/${id}`, requestBody);
+      const response = await api.put(`/stories/${id}`, requestBody);
       setStory(response.data);
       setSuccess("Story updated successfully!");
       setIsEditing(false);
@@ -155,13 +163,31 @@ export default function StoryDetailPage() {
 
     try {
       setIsLiking(true);
-      await api.post(`/api/stories/${id}/like`);
-      setHasLiked(true);
-      // Refresh the story to get updated like count
-      const response = await api.get(`/api/stories/${id}`);
-      setStory(response.data);
+      if (hasLiked) {
+        await api.delete(`/likes/stories/${id}`);
+        setHasLiked(false);
+        setStory((prev) =>
+          prev
+            ? {
+                ...prev,
+                likes: prev.likes - 1,
+              }
+            : null
+        );
+      } else {
+        await api.post(`/likes/stories/${id}`);
+        setHasLiked(true);
+        setStory((prev) =>
+          prev
+            ? {
+                ...prev,
+                likes: prev.likes + 1,
+              }
+            : null
+        );
+      }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to like story");
+      setError(err.response?.data?.message || "Failed to update like status");
     } finally {
       setIsLiking(false);
     }
@@ -173,8 +199,15 @@ export default function StoryDetailPage() {
       return;
     }
 
+    if (!story) {
+      setError("Story not found");
+      return;
+    }
+
     try {
-      const response = await api.put(`/api/stories/${id}/publish`);
+      const response = await api.post(
+        `/stories/${id}/${story.published ? "unpublish" : "publish"}`
+      );
       setStory(response.data);
       setSuccess(
         `Story ${
@@ -199,8 +232,16 @@ export default function StoryDetailPage() {
       return;
     }
 
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this story? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
     try {
-      await api.delete(`/api/stories/${id}`);
+      await api.delete(`/stories/${id}`);
       setSuccess("Story deleted successfully!");
       router.push("/stories");
     } catch (err: any) {

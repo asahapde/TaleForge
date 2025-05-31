@@ -44,7 +44,7 @@ export default function EditStoryPage({ params }: { params: { id: string } }) {
     try {
       setLoading(true);
       setError("");
-      const response = await api.get(`/api/stories/${params.id}`);
+      const response = await api.get(`/stories/${params.id}`);
       const storyData = response.data;
       setStory(storyData);
       setTitle(storyData.title);
@@ -96,7 +96,7 @@ export default function EditStoryPage({ params }: { params: { id: string } }) {
           .filter((tag) => tag.length > 0),
       };
 
-      await api.put(`/api/stories/${params.id}`, requestBody);
+      await api.put(`/stories/${params.id}`, requestBody);
       setSuccess("Story updated successfully! Redirecting to My Stories...");
       setTimeout(() => {
         router.push("/stories/my");

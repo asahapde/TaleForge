@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping(value = "/api/auth", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/auth", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 public class AuthController {
     private final UserService userService;
@@ -45,7 +45,7 @@ public class AuthController {
     }
 
     @PostMapping(value = "/login", consumes = {MediaType.APPLICATION_JSON_VALUE, "application/json;charset=UTF-8"})
-    public ResponseEntity<?> login(@Valid @RequestBody Map<String, String> credentials) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
         try {
             String email = credentials.get("email");
             String password = credentials.get("password");
@@ -54,15 +54,24 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(Map.of("message", "Email and password are required"));
             }
             
-            User user = authService.authenticate(email, password);
-            String token = authService.generateToken(user);
-            
-            return ResponseEntity.ok(Map.of(
-                "token", token,
-                "user", UserDTO.fromEntity(user)
-            ));
+            try {
+                User user = authService.authenticate(email, password);
+                String token = authService.generateToken(user);
+                
+                return ResponseEntity.ok(Map.of(
+                    "token", token,
+                    "user", UserDTO.fromEntity(user)
+                ));
+            } catch (RuntimeException e) {
+                if (e.getMessage().startsWith("User not found")) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "User not found with email: " + email));
+                } else if (e.getMessage().startsWith("Invalid password")) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "Invalid password for user: " + email));
+                }
+                throw e;
+            }
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid credentials"));
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 

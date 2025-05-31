@@ -1,7 +1,7 @@
 "use client";
 
+import api from "@/config/api";
 import { useAuth } from "@/contexts/AuthContext";
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -60,7 +60,7 @@ export default function CreateStoryPage() {
           .filter((tag) => tag.length > 0),
       };
 
-      const response = await axios.post("/api/stories", requestBody);
+      const response = await api.post("/stories", requestBody);
       setSuccess("Story created successfully! Redirecting to My Stories...");
       setTimeout(() => {
         router.push("/stories/my");

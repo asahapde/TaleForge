@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/stories/${params.id}`);
+    const response = await fetch(`${API_BASE_URL}/stories/${params.id}`);
 
     if (!response.ok) {
       throw new Error("Failed to fetch story");
@@ -39,7 +39,7 @@ export async function PUT(
       );
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/stories/${params.id}`, {
+    const response = await fetch(`${API_BASE_URL}/stories/${params.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -67,7 +67,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/stories/${params.id}`, {
+    const response = await fetch(`${API_BASE_URL}/stories/${params.id}`, {
       method: "DELETE",
     });
 

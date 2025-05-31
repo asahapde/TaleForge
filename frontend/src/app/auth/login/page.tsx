@@ -71,7 +71,10 @@ export default function LoginPage() {
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm font-medium">{error}</p>
+                    <h3 className="text-sm font-medium text-red-800">
+                      Login Error
+                    </h3>
+                    <p className="text-sm text-red-700 mt-1">{error}</p>
                   </div>
                 </div>
               </div>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!-- Set most loggers to WARN level -->
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="org.apache" level="WARN"/>
+    <logger name="org.apache.maven" level="WARN"/>
+    <logger name="org.eclipse.aether" level="WARN"/>
+    <logger name="org.codehaus.plexus" level="WARN"/>
+    
+    <!-- Only keep DEBUG level for our application -->
+    <logger name="com.taleforge" level="DEBUG"/>
+    
+    <!-- Root logger -->
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration> 

@@ -1,20 +1,26 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080";
+const API_URL = "http://localhost:8080/api";
 
+// Create a single axios instance
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
+    Accept: "application/json",
   },
 });
 
-// Add a request interceptor to include the auth token
+// Add request interceptor to include the auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log(
+        "Setting Authorization header:",
+        config.headers.Authorization
+      );
     }
     return config;
   },
@@ -23,7 +29,7 @@ api.interceptors.request.use(
   }
 );
 
-// Add a response interceptor to handle errors
+// Add response interceptor to handle errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {

@@ -23,9 +23,14 @@ public class AuthService {
     }
 
     public User authenticate(String email, String password) {
-        return userService.getUserByEmail(email)
-                .filter(user -> passwordEncoder.matches(password, user.getPassword()))
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+        User user = userService.getUserByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("Invalid password for user: " + email);
+        }
+        
+        return user;
     }
 
     public String generateToken(User user) {

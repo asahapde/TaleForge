@@ -48,7 +48,7 @@ export default function MyStoriesPage() {
     try {
       setLoading(true);
       setError("");
-      const response = await api.get(`/api/stories/author/${user?.id}`);
+      const response = await api.get(`/stories/me`);
       setStories(response.data);
     } catch (err: any) {
       setError(
@@ -63,7 +63,7 @@ export default function MyStoriesPage() {
     try {
       setError("");
       setSuccess("");
-      await api.post(`/api/stories/${storyId}/publish`);
+      await api.post(`/stories/${storyId}/publish`);
       setSuccess("Story published successfully!");
       fetchMyStories(); // Refresh the list
     } catch (err: any) {
@@ -77,7 +77,7 @@ export default function MyStoriesPage() {
     try {
       setError("");
       setSuccess("");
-      await api.post(`/api/stories/${storyId}/unpublish`);
+      await api.post(`/stories/${storyId}/unpublish`);
       setSuccess("Story unpublished successfully!");
       fetchMyStories(); // Refresh the list
     } catch (err: any) {
@@ -102,7 +102,7 @@ export default function MyStoriesPage() {
       setError("");
       setSuccess("");
       setDeletingStoryId(storyId);
-      await api.delete(`/api/stories/${storyId}`);
+      await api.delete(`/stories/${storyId}`);
       setSuccess("Story deleted successfully!");
       fetchMyStories(); // Refresh the list
     } catch (err: any) {

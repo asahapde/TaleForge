@@ -19,7 +19,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 @Component
 @RequiredArgsConstructor
@@ -31,22 +30,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserService userService;
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/auth/") || 
+               path.startsWith("/h2-console/") ||
+               (path.startsWith("/stories/") && request.getMethod().equals("GET")) ||
+               (path.startsWith("/likes/") && request.getMethod().equals("GET"));
+    }
+
+    @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
         try {
-            logger.debug("Processing request to: {}", request.getRequestURI());
-            logger.debug("Request method: {}", request.getMethod());
-            
-            // Log all headers
-            Enumeration<String> headerNames = request.getHeaderNames();
-            while (headerNames.hasMoreElements()) {
-                String headerName = headerNames.nextElement();
-                logger.debug("Header {}: {}", headerName, request.getHeader(headerName));
-            }
-
             final String authHeader = request.getHeader("Authorization");
             logger.debug("Authorization header: {}", authHeader);
 
@@ -57,16 +55,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             final String jwt = authHeader.substring(7);
-            logger.debug("Extracted JWT token: {}", jwt);
-
             final String username = jwtService.extractUsername(jwt);
-            logger.debug("Extracted username from token: {}", username);
+            logger.debug("Extracted username: {}", username);
 
-            if (username != null) {
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
                 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
-                    logger.debug("Token is valid for user: {}", username);
                     User user = userService.getUserByUsername(username)
                             .orElseThrow(() -> new RuntimeException("User not found"));
                     
@@ -79,14 +74,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             new WebAuthenticationDetailsSource().buildDetails(request)
                     );
                     
-                    // Set the authentication in the security context
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    
-                    // Store the user in the request attributes for later use
                     request.setAttribute("user", user);
-                    logger.debug("Authentication set in SecurityContext for user: {}", username);
-                } else {
-                    logger.warn("Invalid token for user: {}", username);
+                    logger.debug("Authentication successful for user: {}", username);
                 }
             }
         } catch (Exception e) {

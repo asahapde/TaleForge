@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     }
 
     const response = await fetch(
-      `${API_BASE_URL}/api/stories?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`,
+      `${API_BASE_URL}/stories?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`,
       {
         headers,
       }
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/stories`, {
+    const response = await fetch(`${API_BASE_URL}/stories`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

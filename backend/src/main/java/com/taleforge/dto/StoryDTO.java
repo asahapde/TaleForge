@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -13,6 +15,8 @@ import java.util.HashSet;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class StoryDTO {
     private Long id;
 
@@ -31,7 +35,7 @@ public class StoryDTO {
     private UserDTO author;
     private boolean published;
     private int views;
-    private double rating;
+    private int likes;
     private Set<String> tags;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
@@ -56,7 +60,7 @@ public class StoryDTO {
         dto.setPublished(story.isPublished());
         dto.setTags(story.getTags() != null ? story.getTags() : new HashSet<>());
         dto.setViews(story.getViews());
-        dto.setRating(story.getRating());
+        dto.setLikes(story.getLikes());
         return dto;
     }
 } 
