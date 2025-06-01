@@ -18,6 +18,7 @@ TaleForge is a modern web application for writers and readers to share and disco
 - Spring Security with JWT
 - PostgreSQL
 - Fly.io for hosting
+- Docker
 
 ### Frontend
 
@@ -25,6 +26,7 @@ TaleForge is a modern web application for writers and readers to share and disco
 - TypeScript
 - Tailwind CSS
 - Vercel for hosting
+- Docker
 
 ### Database
 
@@ -47,8 +49,36 @@ The application is hosted on multiple platforms:
 - PostgreSQL
 - Maven
 - npm or yarn
+- Docker and Docker Compose
 
-### Backend Setup
+### Using Docker (Recommended)
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/yourusername/taleforge.git
+   cd taleforge
+   ```
+
+2. Start the application using Docker Compose:
+
+   ```bash
+   docker-compose up -d
+   ```
+
+3. The application will be available at:
+
+   - Frontend: http://localhost:3000
+   - Backend: http://localhost:8080
+
+4. To stop the application:
+   ```bash
+   docker-compose down
+   ```
+
+### Manual Setup
+
+#### Backend Setup
 
 1. Navigate to the backend directory:
    ```bash
@@ -64,7 +94,7 @@ The application is hosted on multiple platforms:
    mvn spring-boot:run
    ```
 
-### Frontend Setup
+#### Frontend Setup
 
 1. Navigate to the frontend directory:
    ```bash
@@ -78,6 +108,95 @@ The application is hosted on multiple platforms:
    ```bash
    npm run dev
    ```
+
+## Docker Configuration
+
+### Backend Dockerfile
+
+```dockerfile
+# Build stage
+FROM maven:3.9-eclipse-temurin-17 AS build
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+# Run stage
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+
+# Create a non-root user
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
+# Copy the built jar from build stage
+COPY --from=build /app/target/*.jar app.jar
+
+# Environment variables will be provided by fly.io
+ENV JAVA_OPTS="-Xmx512m -Xms256m -Djava.security.egd=file:/dev/./urandom -Dserver.address=0.0.0.0"
+
+# Expose the port your application runs on
+EXPOSE 8080
+
+# Run the application
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+```
+
+### Frontend Dockerfile
+
+```dockerfile
+# Build stage
+FROM node:18-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Production stage
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+### Docker Compose
+
+```yaml
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_URL=jdbc:postgresql://db:5432/taleforge
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=taleforge
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+```
 
 ## Environment Variables
 
@@ -121,7 +240,7 @@ taleforge/
 │   │   │   │       ├── repository/  # Data repositories
 │   │   │   │       ├── service/     # Business logic
 │   │   │   │       └── security/    # Security configuration
-│   │   │   └── resources/
+│   │   │   │       └── resources/
 │   │   └── test/
 │   └── pom.xml
 │
