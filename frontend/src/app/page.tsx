@@ -38,6 +38,7 @@ interface Story {
   };
   tags: string[];
   views: number;
+  published: boolean;
 }
 
 interface TagCount {
@@ -60,11 +61,17 @@ export default function HomePage() {
     try {
       setLoading(true);
       setError("");
-      const storiesRes = await api.get("/stories?size=6&sort=views,desc");
-      setStories(storiesRes.data.content);
-      // Collect tags from stories
+      const storiesRes = await api.get("/stories?size=100"); // Get more stories to filter
+      // Filter published stories and sort by views
+      const publishedStories = storiesRes.data.content
+        .filter((story: Story) => story.published)
+        .sort((a: Story, b: Story) => b.views - a.views)
+        .slice(0, 6); // Take top 6 most viewed stories
+      setStories(publishedStories);
+
+      // Collect tags from filtered stories
       const tagCounts: Record<string, number> = {};
-      storiesRes.data.content.forEach((story: Story) => {
+      publishedStories.forEach((story: Story) => {
         story.tags.forEach((tag: string) => {
           tagCounts[tag] = (tagCounts[tag] || 0) + 1;
         });
