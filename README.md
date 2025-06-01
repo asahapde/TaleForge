@@ -207,11 +207,53 @@ volumes:
 - `DB_PASSWORD`: Database password
 - `JWT_SECRET`: Secret key for JWT token generation
 - `JWT_EXPIRATION`: JWT token expiration time
+- `SERVER_PORT`: Port for the backend server (default: 8080)
+- `SERVER_CONTEXT_PATH`: Base path for all endpoints (default: /api)
+- `ADMIN_USERNAME`: Username for admin user
+- `ADMIN_PASSWORD`: Password for admin user
 
 ### Frontend
 
-- `VITE_API_URL`: Backend API URL
-- `VITE_APP_NAME`: Application name
+- `NEXT_PUBLIC_API_URL`: Backend API URL
+
+## Database Schema
+
+### Table Relationships
+
+#### Users
+
+- One-to-Many with Stories (A user can write multiple stories)
+- One-to-Many with Comments (A user can make multiple comments)
+- One-to-Many with Likes (A user can like multiple stories)
+
+#### Stories
+
+- Many-to-One with Users (Each story belongs to one author)
+- One-to-Many with Comments (A story can have multiple comments)
+- One-to-Many with Likes (A story can have multiple likes)
+- Many-to-Many with Categories (A story can have multiple categories)
+
+#### Comments
+
+- Many-to-One with Users (Each comment belongs to one user)
+- Many-to-One with Stories (Each comment belongs to one story)
+
+#### Likes
+
+- Many-to-One with Users (Each like belongs to one user)
+- Many-to-One with Stories (Each like belongs to one story)
+
+#### Categories
+
+- Many-to-Many with Stories (A category can have multiple stories)
+
+### Key Constraints
+
+- Users must have unique email addresses
+- Stories must have a title and content
+- Comments must have content
+- Each user can only like a story once
+- Categories must have unique names
 
 ## Contributing
 
