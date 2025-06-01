@@ -25,6 +25,7 @@ spring:
 
 server:
   port: ${SERVER_PORT}
+  address: 0.0.0.0
   servlet:
     context-path: ${SERVER_CONTEXT_PATH}
 
