@@ -116,7 +116,7 @@ export default function HomePage() {
               <div className="rounded-md shadow">
                 <Link
                   href="/stories"
-                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10"
+                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-white hover:bg-gray-50 hover:shadow-lg hover:scale-105 transition-all duration-200 md:py-4 md:text-lg md:px-10"
                 >
                   Start Reading
                 </Link>
@@ -135,21 +135,30 @@ export default function HomePage() {
       </div>
 
       {/* Animated Tags Marquee */}
-      <div className="w-full overflow-hidden py-6 bg-gradient-to-r from-indigo-50 to-pink-50">
+      <div
+        className="w-full overflow-hidden py-6 bg-gradient-to-r from-indigo-50 to-pink-50"
+        onMouseEnter={() => {
+          const marquee = document.querySelector(".animate-marquee");
+          if (marquee) marquee.classList.add("paused");
+        }}
+        onMouseLeave={() => {
+          const marquee = document.querySelector(".animate-marquee");
+          if (marquee) marquee.classList.remove("paused");
+        }}
+      >
         <div className="relative w-full">
           <div className="whitespace-nowrap animate-marquee flex gap-4 w-max">
             {Array(6)
               .fill(animatedTags)
               .flat()
               .map(({ tag, count }, i) => (
-                <Link
+                <span
                   key={tag + i}
-                  href={`/stories?tag=${tag}`}
-                  className="inline-block px-5 py-2 rounded-full text-sm font-semibold bg-white border border-indigo-50 text-indigo-700 shadow hover:bg-indigo-50 hover:text-indigo-900 transition-all duration-300"
+                  className="inline-block px-5 py-2 rounded-full text-sm font-semibold bg-white border border-indigo-50 text-indigo-700 shadow select-none"
                 >
                   #{tag}{" "}
                   <span className="ml-1 text-xs text-gray-400">({count})</span>
-                </Link>
+                </span>
               ))}
           </div>
         </div>

@@ -1,21 +1,29 @@
 package com.taleforge.controller;
 
-import com.taleforge.domain.Story;
-import com.taleforge.dto.StoryDTO;
-import com.taleforge.service.StoryService;
-import com.taleforge.service.LikeService;
-import com.taleforge.dto.ErrorResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Map;
+import com.taleforge.dto.StoryDTO;
+import com.taleforge.service.LikeService;
+import com.taleforge.service.StoryService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
@@ -140,8 +148,7 @@ public class StoryController {
     public ResponseEntity<Map<String, Object>> debug() {
         log.info("Debug endpoint called");
         return ResponseEntity.ok(Map.of(
-            "message", "Debug endpoint is accessible",
-            "timestamp", System.currentTimeMillis()
-        ));
+                "message", "Debug endpoint is accessible",
+                "timestamp", System.currentTimeMillis()));
     }
-} 
+}

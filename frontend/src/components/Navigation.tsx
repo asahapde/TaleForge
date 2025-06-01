@@ -39,7 +39,7 @@ export default function Navigation() {
                     : "text-gray-600 hover:text-indigo-700 hover:underline hover:underline-offset-4"
                 }`}
               >
-                Stories
+                Explore
               </Link>
               {user && (
                 <Link
@@ -183,7 +183,7 @@ export default function Navigation() {
                   : "text-gray-600 hover:text-indigo-700 hover:underline hover:underline-offset-4"
               }`}
             >
-              Stories
+              Explore
             </Link>
             {user && (
               <Link

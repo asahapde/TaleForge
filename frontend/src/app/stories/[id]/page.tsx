@@ -325,7 +325,10 @@ export default function StoryDetailPage() {
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-4">
-        <Link href="/stories" className="text-indigo-600 hover:underline">
+        <Link
+          href="/stories"
+          className="text-indigo-600 hover:underline cursor-pointer"
+        >
           ← Back to Stories
         </Link>
       </div>
@@ -371,7 +374,7 @@ export default function StoryDetailPage() {
                 minLength={3}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md cursor-pointer"
               />
             </div>
           </div>
@@ -392,7 +395,7 @@ export default function StoryDetailPage() {
                 minLength={10}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md cursor-pointer"
               />
             </div>
           </div>
@@ -413,7 +416,7 @@ export default function StoryDetailPage() {
                 minLength={50}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md cursor-pointer"
               />
             </div>
           </div>
@@ -433,7 +436,7 @@ export default function StoryDetailPage() {
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
                 placeholder="fantasy, adventure, mystery"
-                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md cursor-pointer"
               />
             </div>
           </div>
@@ -442,7 +445,8 @@ export default function StoryDetailPage() {
             <button
               type="button"
               onClick={() => setIsEditing(false)}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
+              aria-label="Cancel"
             >
               Cancel
             </button>
@@ -452,8 +456,9 @@ export default function StoryDetailPage() {
               className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
                 saving
                   ? "bg-indigo-400 cursor-not-allowed"
-                  : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
               }`}
+              aria-label={saving ? "Saving..." : "Save Changes"}
             >
               {saving ? (
                 <>
@@ -489,7 +494,7 @@ export default function StoryDetailPage() {
         <>
           <div className="flex justify-between items-start">
             <div className="flex-1 min-w-0 pr-4">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate cursor-pointer">
                 {story.title}
               </h1>
             </div>
@@ -498,21 +503,24 @@ export default function StoryDetailPage() {
                 <>
                   <Link
                     href={`/stories/${story.id}/edit`}
-                    className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
+                    aria-label="Edit"
                   >
                     Edit
                   </Link>
                   <button
                     onClick={handlePublish}
                     disabled={isUnpublishing}
-                    className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-yellow-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50"
+                    className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-yellow-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 cursor-pointer"
+                    aria-label={story.published ? "Unpublish" : "Publish"}
                   >
                     {story.published ? "Unpublish" : "Publish"}
                   </button>
                   <button
                     onClick={handleDelete}
                     disabled={isDeleting}
-                    className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                    className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 cursor-pointer"
+                    aria-label="Delete"
                   >
                     Delete
                   </button>
@@ -525,8 +533,15 @@ export default function StoryDetailPage() {
                   hasLiked
                     ? "text-red-700 bg-red-100 hover:bg-red-200"
                     : "text-gray-700 bg-gray-100 hover:bg-gray-200"
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50`}
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 cursor-pointer`}
                 title={
+                  !user
+                    ? "Please log in to like stories"
+                    : user.id === story.author.id
+                    ? "Cannot like your own story"
+                    : ""
+                }
+                aria-label={
                   !user
                     ? "Please log in to like stories"
                     : user.id === story.author.id
@@ -553,7 +568,7 @@ export default function StoryDetailPage() {
             </div>
           </div>
 
-          <p className="text-base sm:text-lg mt-4 mb-6 text-gray-700">
+          <p className="text-base sm:text-lg mt-4 mb-6 text-gray-700 cursor-pointer">
             {story.description}
           </p>
 
@@ -561,27 +576,27 @@ export default function StoryDetailPage() {
             {story.tags.map((tag) => (
               <span
                 key={tag}
-                className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded"
+                className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded cursor-pointer"
               >
                 #{tag}
               </span>
             ))}
           </div>
           <div
-            className="prose prose-sm sm:prose-base max-w-none break-words mb-8"
+            className="prose prose-sm sm:prose-base max-w-none break-words mb-8 cursor-pointer"
             dangerouslySetInnerHTML={{ __html: story.content }}
           />
           <div className="flex justify-between items-center text-xs sm:text-sm text-gray-500 pt-4 border-t border-gray-100">
             <div className="flex-1 min-w-0">
-              <span className="truncate block">
+              <span className="truncate block cursor-pointer">
                 By {story.author.displayName || story.author.username}
               </span>
-              <span className="truncate block">
+              <span className="truncate block cursor-pointer">
                 {formatDate(story.createdAt)}
               </span>
             </div>
             <div className="flex items-center gap-2 whitespace-nowrap ml-4">
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 cursor-pointer">
                 <svg
                   className="h-4 w-4"
                   fill="none"
@@ -604,7 +619,7 @@ export default function StoryDetailPage() {
                 {story.views}
               </span>
               <span>•</span>
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 cursor-pointer">
                 <svg
                   className="h-4 w-4"
                   fill="none"

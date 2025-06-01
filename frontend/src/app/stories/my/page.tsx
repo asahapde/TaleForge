@@ -4,7 +4,7 @@ import api from "@/config/api";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Story {
   id: number;
@@ -35,6 +35,8 @@ export default function MyStoriesPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  const dropdownRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
   useEffect(() => {
     if (!authLoading) {
@@ -45,6 +47,20 @@ export default function MyStoriesPage() {
       fetchMyStories();
     }
   }, [user, authLoading]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        openDropdown !== null &&
+        dropdownRefs.current[openDropdown] &&
+        !dropdownRefs.current[openDropdown]?.contains(event.target as Node)
+      ) {
+        setOpenDropdown(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openDropdown]);
 
   const fetchMyStories = async () => {
     try {
@@ -199,7 +215,7 @@ export default function MyStoriesPage() {
             <select
               value={sortBy}
               onChange={handleSortChange}
-              className="appearance-none rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pl-3 pr-8 py-2 bg-white text-sm"
+              className="appearance-none rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pl-3 pr-8 py-2 bg-white text-sm cursor-pointer"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -222,7 +238,8 @@ export default function MyStoriesPage() {
           </div>
           <button
             onClick={handleSearch}
-            className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white rounded-lg font-medium shadow-sm hover:from-indigo-700 hover:to-indigo-600 transition-all duration-300 ml-2"
+            className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white rounded-lg font-medium shadow-sm hover:from-indigo-700 hover:to-indigo-600 transition-all duration-300 ml-2 cursor-pointer"
+            aria-label="Search"
           >
             Search
           </button>
@@ -309,15 +326,111 @@ export default function MyStoriesPage() {
                           {story.title}
                         </Link>
                       </h2>
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          story.published
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {story.published ? "Published" : "Draft"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-3 py-1 text-xs font-semibold rounded-md ${
+                            story.published
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {story.published ? "Published" : "Draft"}
+                        </span>
+                        <div className="relative">
+                          <button
+                            className="p-1 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer"
+                            aria-label="Open actions menu"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (openDropdown === story.id) {
+                                setOpenDropdown(null);
+                              } else {
+                                setOpenDropdown(story.id);
+                              }
+                            }}
+                            aria-expanded={openDropdown === story.id}
+                          >
+                            <svg
+                              className="h-5 w-5 text-gray-500"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                              viewBox="0 0 24 24"
+                            >
+                              <circle cx="12" cy="6" r="1.5" />
+                              <circle cx="12" cy="12" r="1.5" />
+                              <circle cx="12" cy="18" r="1.5" />
+                            </svg>
+                          </button>
+                          {openDropdown === story.id && (
+                            <div
+                              ref={(el) => {
+                                dropdownRefs.current[story.id] = el;
+                                return undefined;
+                              }}
+                              className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow z-10 py-1 flex flex-col gap-1"
+                              role="menu"
+                              aria-label="Story actions"
+                            >
+                              <button
+                                onClick={() => {
+                                  setOpenDropdown(null);
+                                  router.push(`/stories/edit/${story.id}`);
+                                }}
+                                className="w-full text-left px-3 py-1.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 transition-all duration-150 cursor-pointer"
+                                role="menuitem"
+                                aria-label="Edit"
+                              >
+                                Edit
+                              </button>
+                              {story.published ? (
+                                <button
+                                  onClick={() => {
+                                    handleUnpublish(story.id);
+                                    setOpenDropdown(null);
+                                  }}
+                                  className="w-full text-left px-3 py-1.5 text-sm font-semibold text-yellow-700 hover:bg-yellow-50 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 transition-all duration-150 cursor-pointer"
+                                  role="menuitem"
+                                  aria-label="Unpublish"
+                                >
+                                  Unpublish
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    handlePublish(story.id);
+                                    setOpenDropdown(null);
+                                  }}
+                                  className="w-full text-left px-3 py-1.5 text-sm font-semibold text-green-700 hover:bg-green-50 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-green-300 transition-all duration-150 cursor-pointer"
+                                  role="menuitem"
+                                  aria-label="Publish"
+                                >
+                                  Publish
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  handleDelete(story.id);
+                                  setOpenDropdown(null);
+                                }}
+                                disabled={deletingStoryId === story.id}
+                                className="w-full text-left px-3 py-1.5 text-sm font-semibold text-red-700 hover:bg-red-50 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300 transition-all duration-150 cursor-pointer disabled:opacity-50"
+                                role="menuitem"
+                                aria-label={
+                                  deletingStoryId === story.id
+                                    ? "Deleting"
+                                    : "Delete"
+                                }
+                              >
+                                {deletingStoryId === story.id
+                                  ? "Deleting..."
+                                  : "Delete"}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <p className="text-gray-600 mb-4 line-clamp-3 min-h-[4.5rem]">
                       {story.description}
@@ -374,42 +487,6 @@ export default function MyStoriesPage() {
                         </svg>
                         {story.likes}
                       </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex space-x-2">
-                      <Link
-                        href={`/stories/edit/${story.id}`}
-                        className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        Edit
-                      </Link>
-                    </div>
-                    <div className="flex space-x-2">
-                      {story.published ? (
-                        <button
-                          onClick={() => handleUnpublish(story.id)}
-                          className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-yellow-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-                        >
-                          Unpublish
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handlePublish(story.id)}
-                          className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                        >
-                          Publish
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleDelete(story.id)}
-                        disabled={deletingStoryId === story.id}
-                        className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                      >
-                        {deletingStoryId === story.id
-                          ? "Deleting..."
-                          : "Delete"}
-                      </button>
                     </div>
                   </div>
                 </div>

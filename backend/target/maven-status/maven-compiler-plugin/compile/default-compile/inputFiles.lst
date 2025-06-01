@@ -1,12 +1,12 @@
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\repository\CommentRepository.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\controller\LikeController.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\dto\StoryDTO.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\dto\CommentDTO.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\exception\UnauthorizedException.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\dto\ErrorResponse.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\exception\ResourceNotFoundException.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\security\JwtAuthenticationFilter.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\config\WebConfig.java
-E:\Projects\TaleForge\backend\src\main\java\com\taleforge\domain\StoryNode.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\repository\StoryRepository.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\service\StoryService.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\repository\UserRepository.java

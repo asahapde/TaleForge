@@ -1,17 +1,19 @@
 package com.taleforge.service;
 
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.taleforge.domain.Comment;
 import com.taleforge.domain.Story;
 import com.taleforge.domain.User;
 import com.taleforge.repository.CommentRepository;
 import com.taleforge.repository.StoryRepository;
 import com.taleforge.repository.UserRepository;
+
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -20,8 +22,15 @@ public class CommentService {
     private final StoryRepository storyRepository;
     private final UserRepository userRepository;
 
+    @Transactional(readOnly = true)
     public List<Comment> getCommentsByStoryId(Long storyId) {
-        return commentRepository.findByStoryIdOrderByCreatedAtDesc(storyId);
+        List<Comment> comments = commentRepository.findByStoryIdOrderByCreatedAtDesc(storyId);
+        // Initialize the lazy-loaded relationships
+        comments.forEach(comment -> {
+            comment.getAuthor().getUsername();
+            comment.getStory().getId();
+        });
+        return comments;
     }
 
     @Transactional
@@ -36,7 +45,13 @@ public class CommentService {
         comment.setStory(story);
         comment.setAuthor(author);
 
-        return commentRepository.save(comment);
+        Comment savedComment = commentRepository.save(comment);
+
+        // Initialize lazy-loaded relationships
+        savedComment.getAuthor().getUsername();
+        savedComment.getStory().getId();
+
+        return savedComment;
     }
 
     @Transactional
@@ -52,7 +67,14 @@ public class CommentService {
         }
 
         comment.setContent(content);
-        return commentRepository.save(comment);
+        comment.setEdited(true);
+        Comment savedComment = commentRepository.save(comment);
+
+        // Initialize lazy-loaded relationships
+        savedComment.getAuthor().getUsername();
+        savedComment.getStory().getId();
+
+        return savedComment;
     }
 
     @Transactional
@@ -74,7 +96,7 @@ public class CommentService {
     public Comment likeComment(Long commentId, String username) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("Comment not found"));
-        
+
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
@@ -83,14 +105,21 @@ public class CommentService {
         }
 
         comment.setLikes(comment.getLikes() + 1);
-        return commentRepository.save(comment);
+        comment.setLiked(true);
+        Comment savedComment = commentRepository.save(comment);
+
+        // Initialize lazy-loaded relationships
+        savedComment.getAuthor().getUsername();
+        savedComment.getStory().getId();
+
+        return savedComment;
     }
 
     @Transactional
     public Comment unlikeComment(Long commentId, String username) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("Comment not found"));
-        
+
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
@@ -101,6 +130,13 @@ public class CommentService {
         if (comment.getLikes() > 0) {
             comment.setLikes(comment.getLikes() - 1);
         }
-        return commentRepository.save(comment);
+        comment.setLiked(false);
+        Comment savedComment = commentRepository.save(comment);
+
+        // Initialize lazy-loaded relationships
+        savedComment.getAuthor().getUsername();
+        savedComment.getStory().getId();
+
+        return savedComment;
     }
-} 
+}

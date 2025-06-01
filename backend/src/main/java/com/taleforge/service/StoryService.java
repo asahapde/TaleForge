@@ -1,16 +1,8 @@
 package com.taleforge.service;
 
-import com.taleforge.domain.Story;
-import com.taleforge.domain.User;
-import com.taleforge.dto.StoryDTO;
-import com.taleforge.dto.UserDTO;
-import com.taleforge.exception.ResourceNotFoundException;
-import com.taleforge.exception.UnauthorizedException;
-import com.taleforge.repository.StoryRepository;
-import com.taleforge.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashSet;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,8 +10,17 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
+import com.taleforge.domain.Story;
+import com.taleforge.domain.User;
+import com.taleforge.dto.StoryDTO;
+import com.taleforge.dto.UserDTO;
+import com.taleforge.exception.ResourceNotFoundException;
+import com.taleforge.repository.StoryRepository;
+import com.taleforge.repository.UserRepository;
+
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -34,14 +35,13 @@ public class StoryService {
         if (pageable == null) {
             pageable = PageRequest.of(0, 10);
         }
-        
+
         Page<Story> stories;
         Sort sortObj = getSort(sort);
         Pageable pageableWithSort = PageRequest.of(
-            pageable.getPageNumber(),
-            pageable.getPageSize(),
-            sortObj
-        );
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                sortObj);
 
         try {
             if (tag != null && !tag.isEmpty()) {
@@ -74,7 +74,7 @@ public class StoryService {
         if (id == null) {
             throw new IllegalArgumentException("Story ID cannot be null");
         }
-        
+
         Story story = storyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Story not found with id: " + id));
         return convertToDTO(story);
@@ -88,11 +88,11 @@ public class StoryService {
 
         log.info("Creating story in service layer");
         log.info("Story DTO: {}", storyDTO);
-        
+
         try {
             User author = userRepository.findByUsername(username)
                     .orElseThrow(() -> new EntityNotFoundException("User not found with username: " + username));
-            
+
             Story story = Story.builder()
                     .title(storyDTO.getTitle())
                     .description(storyDTO.getDescription())
@@ -101,14 +101,13 @@ public class StoryService {
                     .views(0)
                     .likes(0)
                     .tags(storyDTO.getTags() != null ? storyDTO.getTags() : new HashSet<>())
-                    .nodes(new HashSet<>())
                     .comments(new HashSet<>())
                     .author(author)
                     .build();
-            
+
             Story savedStory = storyRepository.save(story);
             log.info("Story saved successfully with id: {}", savedStory.getId());
-            
+
             return convertToDTO(savedStory);
         } catch (Exception e) {
             log.error("Error creating story in service layer: ", e);
@@ -196,7 +195,7 @@ public class StoryService {
         dto.setTags(story.getTags() != null ? story.getTags() : new HashSet<>());
         dto.setCreatedAt(story.getCreatedAt());
         dto.setUpdatedAt(story.getUpdatedAt());
-        
+
         if (story.getAuthor() != null) {
             UserDTO authorDTO = new UserDTO();
             authorDTO.setId(story.getAuthor().getId());
@@ -204,7 +203,7 @@ public class StoryService {
             authorDTO.setDisplayName(story.getAuthor().getDisplayName());
             dto.setAuthor(authorDTO);
         }
-        
+
         return dto;
     }
 
@@ -259,4 +258,4 @@ public class StoryService {
     public List<Story> getStoriesByTag(String tag) {
         return storyRepository.findByTagsContaining(tag);
     }
-} 
+}

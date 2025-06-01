@@ -33,6 +33,10 @@ body {
   animation-play-state: paused;
 }
 
+.animate-marquee.paused {
+  animation-play-state: paused !important;
+}
+
 @keyframes marquee {
   0% {
     transform: translateX(0);
@@ -202,4 +206,13 @@ body {
 
 .masonry-item {
   height: auto;
+}
+
+button, [type=button], [type=submit], .button, .btn, a[role=button] {
+  cursor: pointer;
+}
+
+button:focus-visible, [type=button]:focus-visible, [type=submit]:focus-visible, .button:focus-visible, .btn:focus-visible, a[role=button]:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
 }

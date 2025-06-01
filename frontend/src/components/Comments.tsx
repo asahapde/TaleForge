@@ -39,9 +39,12 @@ export default function Comments({ storyId }: CommentsProps) {
     try {
       setLoading(true);
       setError("");
+      console.log("Fetching comments for story:", storyId);
       const response = await api.get(`/comments/story/${storyId}`);
+      console.log("Comments fetched:", response.data);
       setComments(response.data);
     } catch (err: any) {
+      console.error("Error fetching comments:", err);
       setError(err.response?.data?.message || "Failed to fetch comments");
     } finally {
       setLoading(false);
@@ -60,12 +63,24 @@ export default function Comments({ storyId }: CommentsProps) {
     try {
       setIsSubmitting(true);
       setError("");
+      console.log("Submitting new comment:", { storyId, content: newComment });
       const response = await api.post(`/comments/story/${storyId}`, {
         content: newComment,
       });
-      setComments([response.data, ...comments]);
+      console.log("Comment submitted successfully:", response.data);
+      const newCommentData = {
+        ...response.data,
+        author: {
+          id: response.data.author.id,
+          username: response.data.author.username,
+          displayName:
+            response.data.author.displayName || response.data.author.username,
+        },
+      };
+      setComments([newCommentData, ...comments]);
       setNewComment("");
     } catch (err: any) {
+      console.error("Error submitting comment:", err);
       setError(err.response?.data?.message || "Failed to post comment");
     } finally {
       setIsSubmitting(false);
@@ -78,9 +93,11 @@ export default function Comments({ storyId }: CommentsProps) {
     try {
       setIsSubmitting(true);
       setError("");
+      console.log("Editing comment:", { commentId, content: editContent });
       const response = await api.put(`/comments/${commentId}`, {
         content: editContent,
       });
+      console.log("Comment edited successfully:", response.data);
       setComments(
         comments.map((comment) =>
           comment.id === commentId ? response.data : comment
@@ -89,6 +106,7 @@ export default function Comments({ storyId }: CommentsProps) {
       setEditingCommentId(null);
       setEditContent("");
     } catch (err: any) {
+      console.error("Error editing comment:", err);
       setError(err.response?.data?.message || "Failed to edit comment");
     } finally {
       setIsSubmitting(false);
@@ -102,9 +120,12 @@ export default function Comments({ storyId }: CommentsProps) {
 
     try {
       setError("");
+      console.log("Deleting comment:", commentId);
       await api.delete(`/comments/${commentId}`);
+      console.log("Comment deleted successfully");
       setComments(comments.filter((comment) => comment.id !== commentId));
     } catch (err: any) {
+      console.error("Error deleting comment:", err);
       setError(err.response?.data?.message || "Failed to delete comment");
     }
   };
@@ -121,8 +142,10 @@ export default function Comments({ storyId }: CommentsProps) {
     try {
       setIsLiking(commentId);
       setError("");
+      console.log("Liking comment:", commentId);
       if (comment.liked) {
         await api.delete(`/comments/${commentId}/like`);
+        console.log("Comment unliked successfully");
         setComments(
           comments.map((c) =>
             c.id === commentId
@@ -136,6 +159,7 @@ export default function Comments({ storyId }: CommentsProps) {
         );
       } else {
         const response = await api.post(`/comments/${commentId}/like`);
+        console.log("Comment liked successfully:", response.data);
         setComments(
           comments.map((c) =>
             c.id === commentId
@@ -149,6 +173,7 @@ export default function Comments({ storyId }: CommentsProps) {
         );
       }
     } catch (err: any) {
+      console.error("Error liking/unliking comment:", err);
       setError(err.response?.data?.message || "Failed to like comment");
     } finally {
       setIsLiking(null);
@@ -206,8 +231,9 @@ export default function Comments({ storyId }: CommentsProps) {
             <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 mt-4">
               <button
                 type="submit"
-                className="px-4 py-2 rounded bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold shadow-sm hover:from-indigo-700 hover:to-indigo-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 text-sm"
+                className="px-4 py-2 rounded bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold shadow-sm hover:from-indigo-700 hover:to-indigo-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 text-sm cursor-pointer"
                 disabled={isSubmitting}
+                aria-label={isSubmitting ? "Posting..." : "Post Comment"}
               >
                 {isSubmitting ? "Posting..." : "Post Comment"}
               </button>
@@ -255,14 +281,16 @@ export default function Comments({ storyId }: CommentsProps) {
                       setEditingCommentId(null);
                       setEditContent("");
                     }}
-                    className="px-4 py-2 rounded bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition text-sm"
+                    className="px-4 py-2 rounded bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition text-sm cursor-pointer"
+                    aria-label="Cancel"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="px-5 py-2 rounded bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold shadow-sm hover:from-indigo-700 hover:to-indigo-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 text-sm"
+                    className="px-5 py-2 rounded bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold shadow-sm hover:from-indigo-700 hover:to-indigo-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 text-sm cursor-pointer"
+                    aria-label={isSubmitting ? "Saving..." : "Save Changes"}
                   >
                     {isSubmitting ? "Saving..." : "Save Changes"}
                   </button>
@@ -287,13 +315,15 @@ export default function Comments({ storyId }: CommentsProps) {
                             setEditingCommentId(comment.id);
                             setEditContent(comment.content);
                           }}
-                          className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
+                          aria-label="Edit"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(comment.id)}
-                          className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 cursor-pointer"
+                          aria-label="Delete"
                         >
                           Delete
                         </button>
@@ -310,8 +340,15 @@ export default function Comments({ storyId }: CommentsProps) {
                         comment.liked
                           ? "text-red-700 bg-red-100 hover:bg-red-200"
                           : "text-gray-700 bg-gray-100 hover:bg-gray-200"
-                      } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50`}
+                      } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer disabled:opacity-50`}
                       title={
+                        !user
+                          ? "Please log in to like comments"
+                          : user.id === comment.author.id
+                          ? "Cannot like your own comment"
+                          : ""
+                      }
+                      aria-label={
                         !user
                           ? "Please log in to like comments"
                           : user.id === comment.author.id

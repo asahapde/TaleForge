@@ -129,7 +129,8 @@ export default function EditStoryPage() {
           </h1>
           <a
             href="/auth/login"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
+            aria-label="Log in"
           >
             Log in
           </a>
@@ -155,7 +156,8 @@ export default function EditStoryPage() {
           </h1>
           <button
             onClick={() => router.back()}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
+            aria-label="Go Back"
           >
             Go Back
           </button>
@@ -183,7 +185,7 @@ export default function EditStoryPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter your story title..."
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-base focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition bg-gray-50"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-base focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition bg-gray-50 cursor-pointer"
               required
             />
           </div>
@@ -195,7 +197,7 @@ export default function EditStoryPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="A short summary of your story..."
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-base focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition bg-gray-50 min-h-[48px]"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-base focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition bg-gray-50 min-h-[48px] cursor-pointer"
               required
             />
           </div>
@@ -207,7 +209,7 @@ export default function EditStoryPage() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Write your story here..."
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-base font-mono focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition bg-gray-50 min-h-[140px]"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-base font-mono focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition bg-gray-50 min-h-[140px] cursor-pointer"
               rows={8}
               required
             />
@@ -221,7 +223,7 @@ export default function EditStoryPage() {
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               placeholder="e.g. fantasy, adventure, magic"
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-base focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition bg-gray-50"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-base focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition bg-gray-50 cursor-pointer"
             />
             <p className="text-xs text-gray-400 mt-1">
               Separate tags with commas.
@@ -236,14 +238,16 @@ export default function EditStoryPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="px-4 py-2 rounded bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition text-sm"
+              className="px-4 py-2 rounded bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition text-sm cursor-pointer"
+              aria-label="Cancel"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold shadow-sm hover:from-indigo-700 hover:to-indigo-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 text-sm"
+              className="px-5 py-2 rounded bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-semibold shadow-sm hover:from-indigo-700 hover:to-indigo-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 text-sm cursor-pointer"
               disabled={loading}
+              aria-label={loading ? "Saving..." : "Save Changes"}
             >
               {loading ? "Saving..." : "Save Changes"}
             </button>
