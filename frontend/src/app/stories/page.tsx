@@ -4,7 +4,7 @@ import api from "@/config/api";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 // Add styles to control body height
 const styles = `
@@ -38,7 +38,7 @@ interface PageResponse {
   number: number;
 }
 
-export default function StoriesPage() {
+function StoriesList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sortBy, setSortBy] = useState("newest");
@@ -495,5 +495,13 @@ export default function StoriesPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function StoriesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <StoriesList />
+    </Suspense>
   );
 }
