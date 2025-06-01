@@ -3,6 +3,7 @@ primary_region = "lax"
 
 [build]
   dockerfile = "Dockerfile"
+  working_dir = "backend"
 
 [env]
   PORT = "8080"
