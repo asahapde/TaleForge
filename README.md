@@ -344,7 +344,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Authors
 
-- Abdullah Sahapdeen - Initial work - [YourGitHub](https://github.com/asahapde)
+- Abdullah Sahapdeen - Initial work - [asahapde](https://github.com/asahapde)
 
 ## 🙏 Acknowledgments
 
