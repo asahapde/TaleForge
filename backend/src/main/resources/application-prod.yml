@@ -1,6 +1,4 @@
 spring:
-  application:
-    name: tale-forge
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
@@ -13,7 +11,7 @@ spring:
       max-lifetime: 1200000
       connection-timeout: 20000
   jpa:
-    show-sql: true
+    show-sql: false
     hibernate:
       ddl-auto: none
     properties:
@@ -26,19 +24,8 @@ server:
   servlet:
     context-path: ${SERVER_CONTEXT_PATH}
 
-springdoc:
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    operationsSorter: method
-
-jwt:
-  secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION}
-
 logging:
   level:
     root: WARN
-    com.taleforge: DEBUG
-    org.springframework.security: DEBUG
+    com.taleforge: INFO
+    org.springframework.security: WARN
