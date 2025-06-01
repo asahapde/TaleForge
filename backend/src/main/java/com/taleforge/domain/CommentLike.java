@@ -12,15 +12,15 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "likes")
+@Table(name = "comment_likes")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Like {
+public class CommentLike {
     @EmbeddedId
-    private LikeId id;
+    private CommentLikeId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("userId")
@@ -28,9 +28,9 @@ public class Like {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("storyId")
-    @JoinColumn(name = "story_id", nullable = false)
-    private Story story;
+    @MapsId("commentId")
+    @JoinColumn(name = "comment_id", nullable = false)
+    private Comment comment;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -41,12 +41,27 @@ public class Like {
         createdAt = LocalDateTime.now();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (!(o instanceof CommentLike))
+            return false;
+        CommentLike that = (CommentLike) o;
+        return id != null && id.equals(that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
     @Embeddable
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class LikeId implements Serializable {
+    public static class CommentLikeId implements Serializable {
         private Long userId;
-        private Long storyId;
+        private Long commentId;
     }
 }

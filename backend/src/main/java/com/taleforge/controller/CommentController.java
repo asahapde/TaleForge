@@ -34,12 +34,13 @@ public class CommentController {
 
     @GetMapping("/story/{storyId}")
     @Transactional(readOnly = true)
-    public ResponseEntity<List<CommentDTO>> getCommentsByStoryId(@PathVariable Long storyId) {
+    public ResponseEntity<List<CommentDTO>> getCommentsByStoryId(
+            @PathVariable Long storyId,
+            @AuthenticationPrincipal UserDetails userDetails) {
         logger.debug("Getting comments for story ID: {}", storyId);
-        List<CommentDTO> comments = commentService.getCommentsByStoryId(storyId).stream()
-                .map(CommentDTO::fromEntity)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(comments);
+        List<Comment> comments = commentService.getCommentsByStoryId(storyId,
+                userDetails != null ? userDetails.getUsername() : null);
+        return ResponseEntity.ok(comments.stream().map(CommentDTO::fromEntity).collect(Collectors.toList()));
     }
 
     @PostMapping("/story/{storyId}")

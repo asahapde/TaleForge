@@ -14,6 +14,7 @@ public class CommentDTO {
     private AuthorDTO author;
     private int likes;
     private boolean liked;
+    private boolean edited;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -36,8 +37,9 @@ public class CommentDTO {
         authorDTO.setDisplayName(comment.getAuthor().getDisplayName());
         dto.setAuthor(authorDTO);
 
-        dto.setLikes(comment.getLikes());
+        dto.setLikes(comment.getLikesCount());
         dto.setLiked(comment.isLiked());
+        dto.setEdited(comment.isEdited());
         dto.setCreatedAt(comment.getCreatedAt());
         dto.setUpdatedAt(comment.getUpdatedAt());
         return dto;

@@ -13,7 +13,9 @@ E:\Projects\TaleForge\backend\src\main\java\com\taleforge\repository\UserReposit
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\config\JpaConfig.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\controller\ErrorController.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\service\LikeService.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\domain\CommentLike.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\dto\UserDTO.java
+E:\Projects\TaleForge\backend\src\main\java\com\taleforge\repository\CommentLikeRepository.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\config\DataInitializer.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\controller\UserController.java
 E:\Projects\TaleForge\backend\src\main\java\com\taleforge\domain\Like.java

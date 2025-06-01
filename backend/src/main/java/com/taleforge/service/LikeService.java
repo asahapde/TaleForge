@@ -1,17 +1,17 @@
 package com.taleforge.service;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.taleforge.domain.Like;
 import com.taleforge.domain.Story;
 import com.taleforge.domain.User;
 import com.taleforge.repository.LikeRepository;
 import com.taleforge.repository.StoryRepository;
 import com.taleforge.repository.UserRepository;
+
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -29,12 +29,13 @@ public class LikeService {
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         if (!likeRepository.existsByUserAndStory(user, story)) {
-            Like like = new Like();
-            like.setUser(user);
-            like.setStory(story);
-            like.setCreatedAt(LocalDateTime.now());
+            Like like = Like.builder()
+                    .id(new Like.LikeId(user.getId(), storyId))
+                    .user(user)
+                    .story(story)
+                    .build();
             likeRepository.save(like);
-            
+
             story.setLikes(story.getLikes() + 1);
             storyRepository.save(story);
         }
@@ -62,4 +63,4 @@ public class LikeService {
 
         return likeRepository.existsByUserAndStory(user, story);
     }
-} 
+}

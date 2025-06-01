@@ -6,8 +6,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.taleforge.domain.Comment;
+import com.taleforge.domain.CommentLike;
 import com.taleforge.domain.Story;
 import com.taleforge.domain.User;
+import com.taleforge.repository.CommentLikeRepository;
 import com.taleforge.repository.CommentRepository;
 import com.taleforge.repository.StoryRepository;
 import com.taleforge.repository.UserRepository;
@@ -21,15 +23,27 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final StoryRepository storyRepository;
     private final UserRepository userRepository;
+    private final CommentLikeRepository commentLikeRepository;
 
     @Transactional(readOnly = true)
-    public List<Comment> getCommentsByStoryId(Long storyId) {
+    public List<Comment> getCommentsByStoryId(Long storyId, String username) {
         List<Comment> comments = commentRepository.findByStoryIdOrderByCreatedAtDesc(storyId);
-        // Initialize the lazy-loaded relationships
+
+        // Get current user if logged in
+        final User currentUser = username != null ? userRepository.findByUsername(username).orElse(null) : null;
+
+        // Initialize the lazy-loaded relationships and set liked status
         comments.forEach(comment -> {
             comment.getAuthor().getUsername();
             comment.getStory().getId();
+            comment.getLikes().size(); // Initialize likes
+
+            // Set liked status if user is logged in
+            if (currentUser != null) {
+                comment.setLiked(commentLikeRepository.existsByUserAndComment(currentUser, comment));
+            }
         });
+
         return comments;
     }
 
@@ -50,6 +64,7 @@ public class CommentService {
         // Initialize lazy-loaded relationships
         savedComment.getAuthor().getUsername();
         savedComment.getStory().getId();
+        savedComment.getLikes().size();
 
         return savedComment;
     }
@@ -73,6 +88,7 @@ public class CommentService {
         // Initialize lazy-loaded relationships
         savedComment.getAuthor().getUsername();
         savedComment.getStory().getId();
+        savedComment.getLikes().size();
 
         return savedComment;
     }
@@ -104,13 +120,22 @@ public class CommentService {
             throw new IllegalStateException("Cannot like your own comment");
         }
 
-        comment.setLikes(comment.getLikes() + 1);
-        comment.setLiked(true);
+        if (!commentLikeRepository.existsByUserAndComment(user, comment)) {
+            CommentLike like = CommentLike.builder()
+                    .id(new CommentLike.CommentLikeId(user.getId(), commentId))
+                    .user(user)
+                    .comment(comment)
+                    .build();
+            commentLikeRepository.save(like);
+            comment.getLikes().add(like);
+        }
+
         Comment savedComment = commentRepository.save(comment);
 
         // Initialize lazy-loaded relationships
         savedComment.getAuthor().getUsername();
         savedComment.getStory().getId();
+        savedComment.getLikes().size();
 
         return savedComment;
     }
@@ -127,15 +152,17 @@ public class CommentService {
             throw new IllegalStateException("Cannot unlike your own comment");
         }
 
-        if (comment.getLikes() > 0) {
-            comment.setLikes(comment.getLikes() - 1);
-        }
-        comment.setLiked(false);
+        commentLikeRepository.findByUserAndComment(user, comment).ifPresent(like -> {
+            commentLikeRepository.delete(like);
+            comment.getLikes().remove(like);
+        });
+
         Comment savedComment = commentRepository.save(comment);
 
         // Initialize lazy-loaded relationships
         savedComment.getAuthor().getUsername();
         savedComment.getStory().getId();
+        savedComment.getLikes().size();
 
         return savedComment;
     }
