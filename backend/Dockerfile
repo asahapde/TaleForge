@@ -17,7 +17,7 @@ USER spring:spring
 COPY --from=build /app/target/*.jar app.jar
 
 # Environment variables will be provided by fly.io
-ENV JAVA_OPTS="-Xmx512m -Xms256m"
+ENV JAVA_OPTS="-Xmx512m -Xms256m -Djava.security.egd=file:/dev/./urandom -Dserver.address=0.0.0.0"
 
 # Expose the port your application runs on
 EXPOSE 8080
