@@ -2,18 +2,14 @@ spring:
   application:
     name: tale-forge
   datasource:
-    url: jdbc:h2:file:./taleforge;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    username: sa
-    password: password
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.h2.Driver
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.H2Dialect
+    show-sql: false
   sql:
     init:
       mode: never
@@ -22,16 +18,12 @@ spring:
       enabled: true
       path: /h2-console
       settings:
-        web-allow-others: true
-  # Commenting out Redis temporarily
-  # redis:
-  #   host: localhost
-  #   port: 6379
+        web-allow-others: false
 
 server:
-  port: 8080
+  port: ${SERVER_PORT}
   servlet:
-    context-path: /api
+    context-path: ${SERVER_CONTEXT_PATH}
 
 springdoc:
   api-docs:
@@ -41,10 +33,11 @@ springdoc:
     operationsSorter: method
 
 jwt:
-  secret: ${JWT_SECRET:your-256-bit-secret}
-  expiration: 86400000 # 24 hours in milliseconds
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION}
 
 logging:
   level:
-    org.springframework.security: DEBUG
+    root: WARN
     com.taleforge: DEBUG
+    org.springframework.security: DEBUG
