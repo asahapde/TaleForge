@@ -1,120 +1,110 @@
 # 📚 TaleForge
 
-TaleForge is a modern, full-stack storytelling platform where writers can share their stories, connect with readers, and build their audience. Built with Next.js, Spring Boot, and a passion for storytelling.
+TaleForge is a modern web application for writers and readers to share and discover stories. Built with Spring Boot and React, it provides a seamless experience for creating, reading, and engaging with stories.
 
-![TaleForge Banner](https://tale-forge.vercel.app/banner.png)
+## Features
 
-## ✨ Features
+- **User Authentication**: Secure login and registration system
+- **Story Management**: Create, edit, and delete stories
+- **Reading Experience**: Clean and intuitive interface for reading stories
+- **Categories**: Organize stories with tags and categories
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
 
-### For Writers
+## Tech Stack
 
-- 📝 Create and publish stories with rich text formatting
-- 🏷️ Add tags to categorize your stories
-- 📊 Track story views and engagement
-- 👥 Build your author profile with bio and display name
-- 🔒 Save drafts and publish when ready
-- 📱 Responsive design for writing on any device
+### Backend
 
-### For Readers
+- Spring Boot 3.2.3
+- Spring Security with JWT
+- PostgreSQL
+- Fly.io for hosting
 
-- 📚 Discover stories by category and tags
-- 🔍 Advanced search functionality
-- ❤️ Like and save favorite stories
-- 💬 Comment on stories and engage with authors
-- 👤 Follow your favorite writers
-- 📱 Read stories on any device
+### Frontend
 
-### Technical Features
+- React 18
+- TypeScript
+- Tailwind CSS
+- Vercel for hosting
 
-- 🔐 Secure authentication with JWT
-- 🌐 Cross-origin resource sharing (CORS) enabled
-- 📱 Responsive design with Tailwind CSS
-- 🔄 Real-time updates for likes and comments
-- 📊 Pagination for better performance
-- 🔍 Full-text search capabilities
+### Database
 
-## 🚀 Getting Started
+- Supabase (PostgreSQL)
+
+## Hosting
+
+The application is hosted on multiple platforms:
+
+- Frontend: [Vercel](https://tale-forge.vercel.app/)
+- Backend: Fly.io
+- Database: Supabase
+
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ and npm
-- Java 17+
+- Java 17 or higher
+- Node.js 18 or higher
+- PostgreSQL
 - Maven
-- Docker (optional)
+- npm or yarn
 
 ### Backend Setup
 
-1. Clone the repository:
-
-```bash
-git clone https://github.com/yourusername/taleforge.git
-cd taleforge
-```
-
-2. Navigate to the backend directory:
-
-```bash
-cd backend
-```
-
-3. Configure environment variables:
-   Create a `.env` file in the backend directory with:
-
-```env
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/taleforge
-SPRING_DATASOURCE_USERNAME=your_username
-SPRING_DATASOURCE_PASSWORD=your_password
-JWT_SECRET=your_jwt_secret
-JWT_EXPIRATION=86400000
-```
-
-4. Run the backend:
-
-```bash
-./mvnw spring-boot:run
-```
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Install dependencies:
+   ```bash
+   mvn install
+   ```
+3. Configure the database in `application.properties`
+4. Run the application:
+   ```bash
+   mvn spring-boot:run
+   ```
 
 ### Frontend Setup
 
 1. Navigate to the frontend directory:
-
-```bash
-cd frontend
-```
-
+   ```bash
+   cd frontend
+   ```
 2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-```bash
-npm install
-```
+## Environment Variables
 
-3. Configure environment variables:
-   Create a `.env.local` file in the frontend directory with:
+### Backend
 
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8080/api
-```
+- `DB_URL`: Database connection URL
+- `DB_USERNAME`: Database username
+- `DB_PASSWORD`: Database password
+- `JWT_SECRET`: Secret key for JWT token generation
+- `JWT_EXPIRATION`: JWT token expiration time
 
-4. Run the development server:
+### Frontend
 
-```bash
-npm run dev
-```
+- `VITE_API_URL`: Backend API URL
+- `VITE_APP_NAME`: Application name
 
-### Docker Deployment
+## Contributing
 
-1. Build the backend Docker image:
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-```bash
-cd backend
-docker build -t taleforge-backend .
-```
+## License
 
-2. Run the backend container:
-
-```bash
-docker run -p 8080:8080 taleforge-backend
-```
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🏗️ Project Structure
 
