@@ -1,6 +1,6 @@
 # 📚 TaleForge
 
-🚀 **Check out the app:** [Frontend (Vercel)](https://tale-forge.vercel.app/) &nbsp;|&nbsp; [Backend API (Fly.io)](https://your-fly-backend-url.fly.dev/)
+🚀 **Check out the app:** [Frontend (Vercel)](https://tale-forge.vercel.app/)
 
 TaleForge is a modern web application for writers and readers to share and discover stories. Built with Spring Boot and React, it provides a seamless experience for creating, reading, and engaging with stories.
 
@@ -344,7 +344,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Authors
 
-- Abdullah Sahapdeen - Initial work - [YourGitHub](https://github.com/asahapde)
+- Abdullah Sahapdeen - Initial work - [asahapde](https://github.com/asahapde)
 
 ## 🙏 Acknowledgments
 
