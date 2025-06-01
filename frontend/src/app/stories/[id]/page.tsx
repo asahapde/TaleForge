@@ -533,7 +533,7 @@ export default function StoryDetailPage() {
                   hasLiked
                     ? "text-red-700 bg-red-100 hover:bg-red-200"
                     : "text-gray-700 bg-gray-100 hover:bg-gray-200"
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 cursor-pointer`}
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 cursor-pointer relative group`}
                 title={
                   !user
                     ? "Please log in to like stories"
@@ -549,6 +549,11 @@ export default function StoryDetailPage() {
                     : ""
                 }
               >
+                {!user && (
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                    Please log in to like stories
+                  </div>
+                )}
                 <svg
                   className={`h-4 w-4 mr-1.5 ${
                     hasLiked ? "fill-current" : "fill-none"

@@ -340,7 +340,7 @@ export default function Comments({ storyId }: CommentsProps) {
                         comment.liked
                           ? "text-red-700 bg-red-100 hover:bg-red-200"
                           : "text-gray-700 bg-gray-100 hover:bg-gray-200"
-                      } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer disabled:opacity-50`}
+                      } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer disabled:opacity-50 relative group`}
                       title={
                         !user
                           ? "Please log in to like comments"
@@ -356,6 +356,11 @@ export default function Comments({ storyId }: CommentsProps) {
                           : ""
                       }
                     >
+                      {!user && (
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                          Please log in to like comments
+                        </div>
+                      )}
                       <svg
                         className={`h-4 w-4 mr-1.5 ${
                           comment.liked ? "fill-current" : "fill-none"
