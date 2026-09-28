@@ -1,44 +1,43 @@
 spring:
   application:
-    name: tale-forge
-  datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-      idle-timeout: 300000
-      max-lifetime: 1200000
-      connection-timeout: 20000
+    name: taleforge
+  profiles:
+    default: dev
+  threads:
+    virtual:
+      enabled: true
   jpa:
-    show-sql: true
+    open-in-view: false
     hibernate:
       ddl-auto: none
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-    open-in-view: false
+        jdbc:
+          time_zone: UTC
+        default_batch_fetch_size: 50
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
 
 server:
-  port: ${SERVER_PORT}
+  port: ${PORT:8080}
   servlet:
-    context-path: ${SERVER_CONTEXT_PATH}
+    context-path: /api
+  compression:
+    enabled: true
+    mime-types: application/json
+  shutdown: graceful
+  error:
+    include-stacktrace: never
 
-springdoc:
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    operationsSorter: method
-
-jwt:
-  secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION}
+app:
+  jwt:
+    secret: ${JWT_SECRET:local-dev-secret-change-me-this-must-be-32-bytes-or-more}
+    expiration-hours: ${JWT_EXPIRATION_HOURS:168}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
 logging:
   level:
-    root: WARN
-    com.taleforge: DEBUG
-    org.springframework.security: DEBUG
+    root: INFO
+    org.hibernate.orm.deprecation: ERROR

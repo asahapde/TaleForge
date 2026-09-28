@@ -1,0 +1,18 @@
+name: Keep API warm
+
+# Free Render instances sleep after 15 idle minutes and take a while to boot a JVM.
+# Pinging /api/health (which never touches the database) keeps the API awake while letting Neon scale to zero.
+# Set the repository variable API_HEALTH_URL, e.g. https://taleforge-api.onrender.com/api/health
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    if: ${{ vars.API_HEALTH_URL != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping health endpoint
+        run: curl --fail --silent --show-error --max-time 120 --retry 2 "${{ vars.API_HEALTH_URL }}"

@@ -1,36 +1,24 @@
+# DATABASE_URL (a postgresql:// connection string, as Neon provides it) is converted
+# into these properties by DatabaseUrlEnvironmentPostProcessor when DB_URL is not set.
 spring:
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 3
-      minimum-idle: 1
-      idle-timeout: 300000
-      max-lifetime: 1200000
+      # Neon scales to zero when no connections are open, so let idle connections close.
+      maximum-pool-size: 5
+      minimum-idle: 0
+      idle-timeout: 60000
+      max-lifetime: 300000
       connection-timeout: 20000
-      validation-timeout: 5000
-      leak-detection-threshold: 60000
-      auto-commit: true
-      pool-name: TaleForgeHikariPool
-  jpa:
-    show-sql: false
-    hibernate:
-      ddl-auto: none
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-    open-in-view: false
 
-server:
-  port: ${SERVER_PORT}
-  address: 0.0.0.0
-  servlet:
-    context-path: ${SERVER_CONTEXT_PATH}
+app:
+  jwt:
+    secret: ${JWT_SECRET}
 
 logging:
   level:
     root: WARN
     com.taleforge: INFO
-    org.springframework.security: WARN
+    org.springframework.boot.web.embedded: INFO

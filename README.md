@@ -1,353 +1,144 @@
-# 📚 TaleForge
+# TaleForge
 
-🚀 **Check out the app:** [Frontend (Vercel)](https://tale-forge.vercel.app/)
+A library of branching fiction. Read a chapter, then choose which way the story goes. If none of the paths is the one you'd take, write your own chapter and it becomes a new choice for every reader after you.
 
-TaleForge is a modern web application for writers and readers to share and discover stories. Built with Spring Boot and React, it provides a seamless experience for creating, reading, and engaging with stories.
+Live: [tale-forge.vercel.app](https://tale-forge.vercel.app/)
 
-## Features
+![Home](Screenshots/home.png)
 
-- **User Authentication**: Secure login and registration system
-- **Story Management**: Create, edit, and delete stories
-- **Reading Experience**: Clean and intuitive interface for reading stories
-- **Categories**: Organize stories with tags and categories
-- **Responsive Design**: Works seamlessly on desktop and mobile devices
+## How branching works
 
-## Tech Stack
+Every story is a tree of chapters. The author writes the first chapter (and usually a main path); any signed-in writer can add an alternative next chapter after any published chapter, as long as the author left the story open to branches.
 
-### Backend
+- Each branch has a **choice line** ("Follow the sound down the stairs") that readers see at the end of the parent chapter.
+- The author's own chapters are marked as **the author's path**; everyone else's are marked **a branch by …**.
+- A chapter can have at most 8 branches.
+- The author can remove any chapter (and everything after it). A contributor can remove their own chapter only while nobody has written past it.
 
-- Spring Boot 3.2.3
-- Spring Security with JWT
-- PostgreSQL
-- Fly.io for hosting
-- Docker
+![Story map](Screenshots/story.png)
 
-### Frontend
+![Reader](Screenshots/reader.png)
 
-- React 18
-- TypeScript
-- Tailwind CSS
-- Vercel for hosting
-- Docker
+## Stack
 
-### Database
+| Part | Tech | Hosted on |
+| --- | --- | --- |
+| API | Java 21, Spring Boot 3.5, Spring Security (JWT), Spring Data JPA, Flyway | Render (Docker, free tier) |
+| Database | PostgreSQL | Neon (free tier) |
+| Web | Next.js 15 (App Router), React 19, Tailwind CSS 4 | Vercel |
 
-- Supabase (PostgreSQL)
+The browser only talks to the Next.js app. Requests to `/api/*` are rewritten to the Spring Boot API, so there is no CORS setup in the browser path and the API URL never ships to the client. Public pages (home, library, stories, chapters, writer profiles) are rendered on the server and cached with incremental static regeneration, so readers rarely wait on the API even when it is cold.
 
-## Hosting
+## Run it locally
 
-The application is hosted on multiple platforms:
+You need Java 21, Maven, and Node 20+.
 
-- Frontend: [Vercel](https://tale-forge.vercel.app/)
-- Backend: Fly.io
-- Database: Supabase
+**API** (uses an in-memory H2 database seeded with demo stories; no setup needed):
 
-## Getting Started
-
-### Prerequisites
-
-- Java 17 or higher
-- Node.js 18 or higher
-- PostgreSQL
-- Maven
-- npm or yarn
-- Docker and Docker Compose
-
-### Using Docker (Recommended)
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/yourusername/taleforge.git
-   cd taleforge
-   ```
-
-2. Start the application using Docker Compose:
-
-   ```bash
-   docker-compose up -d
-   ```
-
-3. The application will be available at:
-
-   - Frontend: http://localhost:3000
-   - Backend: http://localhost:8080
-
-4. To stop the application:
-   ```bash
-   docker-compose down
-   ```
-
-### Manual Setup
-
-#### Backend Setup
-
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-2. Install dependencies:
-   ```bash
-   mvn install
-   ```
-3. Configure the database in `application.properties`
-4. Run the application:
-   ```bash
-   mvn spring-boot:run
-   ```
-
-#### Frontend Setup
-
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-## Docker Configuration
-
-### Backend Dockerfile
-
-```dockerfile
-# Build stage
-FROM maven:3.9-eclipse-temurin-17 AS build
-WORKDIR /app
-COPY pom.xml .
-COPY src ./src
-RUN mvn clean package -DskipTests
-
-# Run stage
-FROM eclipse-temurin:17-jre-alpine
-WORKDIR /app
-
-# Create a non-root user
-RUN addgroup -S spring && adduser -S spring -G spring
-USER spring:spring
-
-# Copy the built jar from build stage
-COPY --from=build /app/target/*.jar app.jar
-
-# Environment variables will be provided by fly.io
-ENV JAVA_OPTS="-Xmx512m -Xms256m -Djava.security.egd=file:/dev/./urandom -Dserver.address=0.0.0.0"
-
-# Expose the port your application runs on
-EXPOSE 8080
-
-# Run the application
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+```bash
+cd backend
+mvn spring-boot:run
 ```
 
-### Frontend Dockerfile
+It serves `http://localhost:8080/api`. Check it with `curl http://localhost:8080/api/health`.
 
-```dockerfile
-# Build stage
-FROM node:18-alpine AS build
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
+**Web**:
 
-# Production stage
-FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-### Docker Compose
+Open `http://localhost:3000`. The demo accounts `johndoe`, `janedoe`, `alexsmith`, `sarahjones` and `mikebrown` all use the password `password123`.
 
-```yaml
-version: "3.8"
+To point the local API at a real Postgres database instead of H2, copy `backend/.env.example`, fill it in, export the variables, and run with `SPRING_PROFILES_ACTIVE=prod`.
 
-services:
-  backend:
-    build: ./backend
-    ports:
-      - "8080:8080"
-    environment:
-      - DB_URL=jdbc:postgresql://db:5432/taleforge
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=postgres
-    depends_on:
-      - db
+## Deploy
 
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
+### 1. Database: Neon
 
-  db:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_DB=taleforge
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+1. Create a project at [neon.tech](https://neon.tech).
+2. On the dashboard, open **Connect**, turn **Connection pooling off**, and copy the connection string. It looks like `postgresql://user:password@ep-xxx.region.aws.neon.tech/neondb?sslmode=require`.
 
-volumes:
-  postgres_data:
-```
+The API accepts this string as-is through `DATABASE_URL`; it is converted to JDBC settings on startup. Flyway creates the tables and seed data on first boot. Use the direct (non-pooler) string, because Flyway migrations don't work well through PgBouncer.
 
-## Environment Variables
+Neon suspends an idle database after a few minutes and wakes it automatically on the next query, usually in under a second, so there's no manual "restore project" step like on Supabase.
 
-### Backend
+### 2. API: Render
 
-- `DB_URL`: Database connection URL
-- `DB_USERNAME`: Database username
-- `DB_PASSWORD`: Database password
-- `JWT_SECRET`: Secret key for JWT token generation
-- `JWT_EXPIRATION`: JWT token expiration time
-- `SERVER_PORT`: Port for the backend server (default: 8080)
-- `SERVER_CONTEXT_PATH`: Base path for all endpoints (default: /api)
-- `ADMIN_USERNAME`: Username for admin user
-- `ADMIN_PASSWORD`: Password for admin user
+1. At [render.com](https://render.com), choose **New > Blueprint** and select this repository. Render reads `render.yaml` and creates the `taleforge-api` web service from `backend/Dockerfile`.
+2. When prompted, paste the Neon connection string as `DATABASE_URL`. `JWT_SECRET` is generated for you.
+3. If the frontend lives somewhere other than `tale-forge.vercel.app`, update `CORS_ALLOWED_ORIGINS`.
 
-### Frontend
+Once deployed, `https://<your-service>.onrender.com/api/health` should return `{"status":"ok"}`.
 
-- `NEXT_PUBLIC_API_URL`: Backend API URL
+Free Render services sleep after 15 minutes without traffic. `.github/workflows/keep-warm.yml` pings the health endpoint every 10 minutes to prevent that. To turn it on, add a repository variable (**Settings > Secrets and variables > Actions > Variables**) named `API_HEALTH_URL` with the health URL above. The health check doesn't touch the database, so Neon can still sleep. The free plan's 750 instance hours a month cover one service running all month.
 
-## Database Schema
+### 3. Web: Vercel
 
-### Table Relationships
+1. Import the repository at [vercel.com](https://vercel.com/new) and set the **Root Directory** to `frontend`.
+2. Add the environment variable `API_URL=https://<your-service>.onrender.com/api`.
+3. Deploy.
 
-#### Users
+## Configuration
 
-- One-to-Many with Stories (A user can write multiple stories)
-- One-to-Many with Comments (A user can make multiple comments)
-- One-to-Many with Likes (A user can like multiple stories)
+**API** (`backend/.env.example`):
 
-#### Stories
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | Postgres URL in `postgresql://user:pass@host/db` form (Neon, Render, Heroku style). Alternatively set `DB_URL`, `DB_USERNAME` and `DB_PASSWORD` directly. |
+| `JWT_SECRET` | At least 32 characters. Required in production. |
+| `JWT_EXPIRATION_HOURS` | Session length, default 168 (7 days). |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated origins; wildcards like `https://*.vercel.app` are allowed. |
+| `PORT` | Set by the host; default 8080. |
 
-- Many-to-One with Users (Each story belongs to one author)
-- One-to-Many with Comments (A story can have multiple comments)
-- One-to-Many with Likes (A story can have multiple likes)
-- Many-to-Many with Categories (A story can have multiple categories)
+**Web** (`frontend/.env.example`):
 
-#### Comments
+| Variable | Purpose |
+| --- | --- |
+| `API_URL` | Base URL of the API including `/api`. Default `http://localhost:8080/api`. |
 
-- Many-to-One with Users (Each comment belongs to one user)
-- Many-to-One with Stories (Each comment belongs to one story)
-
-#### Likes
-
-- Many-to-One with Users (Each like belongs to one user)
-- Many-to-One with Stories (Each like belongs to one story)
-
-#### Categories
-
-- Many-to-Many with Stories (A category can have multiple stories)
-
-### Key Constraints
-
-- Users must have unique email addresses
-- Stories must have a title and content
-- Comments must have content
-- Each user can only like a story once
-- Categories must have unique names
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🏗️ Project Structure
+## Project layout
 
 ```
-taleforge/
-├── backend/                 # Spring Boot backend
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/
-│   │   │   │   └── com/taleforge/
-│   │   │   │       ├── config/      # Configuration classes
-│   │   │   │       ├── controller/  # REST controllers
-│   │   │   │       ├── domain/      # Entity classes
-│   │   │   │       ├── repository/  # Data repositories
-│   │   │   │       ├── service/     # Business logic
-│   │   │   │       └── security/    # Security configuration
-│   │   │   │       └── resources/
-│   │   └── test/
-│   └── pom.xml
-│
-└── frontend/                # Next.js frontend
-    ├── src/
-    │   ├── app/            # Next.js app directory
-    │   ├── components/     # React components
-    │   ├── contexts/       # React contexts
-    │   └── config/         # Configuration files
-    ├── public/             # Static files
-    └── package.json
+backend/
+  src/main/java/com/taleforge/
+    config/       app properties, security, DATABASE_URL parsing
+    domain/       JPA entities (User, Story, Chapter, Comment, StoryLike)
+    exception/    API errors and the JSON error handler
+    repository/   Spring Data repositories and query projections
+    security/     JWT issue/parse and request filter
+    service/      business rules (visibility, branching permissions, counts)
+    web/          REST controllers; web/dto holds request/response records
+  src/main/resources/db/migration/   Flyway schema and seed data
+  Dockerfile
+frontend/
+  src/app/        routes (library, story, chapter reader, branch editor, desk, writers, auth)
+  src/components/ UI (branch map, reader, covers, comments, forms)
+  src/lib/        API client, server fetch helper, formatting
+render.yaml       Render blueprint for the API
 ```
 
-## 🔧 API Documentation
+## API overview
 
-The API documentation is available at `/api/docs` when running the backend server.
+All paths are under `/api`. Reads are public; everything else needs `Authorization: Bearer <token>` from login or register.
 
-### Key Endpoints
+| Method and path | What it does |
+| --- | --- |
+| `POST /auth/register`, `POST /auth/login` | Get a token |
+| `GET /me`, `PUT /me`, `GET /me/stories`, `GET /me/branches` | Your account, including drafts |
+| `GET /stories?q=&tag=&sort=new\|popular\|liked\|branching\|updated&page=` | Search the library |
+| `POST /stories`, `GET/PUT/DELETE /stories/{id}` | Stories (creating one also creates its first chapter) |
+| `GET /stories/{id}/tree` | Every chapter in the story as a flat tree |
+| `GET/PUT/DELETE /chapters/{id}` | A chapter with the path to it and its next choices |
+| `POST /chapters/{id}/branches` | Write a new next chapter |
+| `GET /chapters/recent` | Latest branches across the site |
+| `GET/POST/DELETE /stories/{id}/like` | Likes |
+| `GET/POST /stories/{id}/comments`, `PUT/DELETE /comments/{id}` | Comments |
+| `GET /users/{username}`, `/users/{username}/stories`, `/users/{username}/branches` | Public profiles |
+| `GET /tags`, `GET /health` | Subjects with counts, health check |
 
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login user
-- `GET /api/stories` - Get all stories
-- `POST /api/stories` - Create a new story
-- `GET /api/stories/{id}` - Get story by ID
-- `PUT /api/stories/{id}` - Update story
-- `DELETE /api/stories/{id}` - Delete story
+## Author
 
-## 🛠️ Technologies Used
-
-### Frontend
-
-- Next.js 14
-- React
-- Tailwind CSS
-- Axios
-- React Context API
-
-### Backend
-
-- Spring Boot 3
-- Spring Security
-- Spring Data JPA
-- PostgreSQL
-- JWT Authentication
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👥 Authors
-
-- Abdullah Sahapdeen - Initial work - [asahapde](https://github.com/asahapde)
-
-## 🙏 Acknowledgments
-
-- Thanks to all contributors who have helped shape TaleForge
-- Inspired by platforms like Wattpad and Medium
-- Built with ❤️ for the writing community
+Abdullah Sahapdeen ([asahapde](https://github.com/asahapde))

@@ -3,64 +3,58 @@ package com.taleforge.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.taleforge.domain.Like;
-import com.taleforge.domain.Story;
-import com.taleforge.domain.User;
-import com.taleforge.repository.LikeRepository;
+import com.taleforge.domain.StoryLike;
+import com.taleforge.exception.ApiException;
+import com.taleforge.repository.StoryLikeRepository;
 import com.taleforge.repository.StoryRepository;
-import com.taleforge.repository.UserRepository;
+import com.taleforge.web.dto.StoryDtos.LikeResponse;
 
-import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class LikeService {
 
-    private final LikeRepository likeRepository;
-    private final StoryRepository storyRepository;
-    private final UserRepository userRepository;
+    private final StoryLikeRepository likes;
+    private final StoryRepository stories;
+    private final EntityManager entityManager;
+
+    @Transactional(readOnly = true)
+    public LikeResponse status(Long storyId, Long viewerId) {
+        var story = stories.findById(storyId).orElseThrow(() -> ApiException.notFound("Story"));
+        boolean liked = viewerId != null && likes.existsById(new StoryLike.Id(viewerId, storyId));
+        return new LikeResponse(liked, story.getLikeCount());
+    }
 
     @Transactional
-    public void likeStory(Long storyId, String username) {
-        Story story = storyRepository.findById(storyId)
-                .orElseThrow(() -> new EntityNotFoundException("Story not found"));
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-
-        if (!likeRepository.existsByUserAndStory(user, story)) {
-            Like like = Like.builder()
-                    .id(new Like.LikeId(user.getId(), storyId))
-                    .user(user)
-                    .story(story)
-                    .build();
-            likeRepository.save(like);
-
-            story.setLikes(story.getLikes() + 1);
-            storyRepository.save(story);
+    public LikeResponse like(Long storyId, Long viewerId) {
+        var story = stories.findById(storyId).orElseThrow(() -> ApiException.notFound("Story"));
+        if (!story.isPublished()) {
+            throw ApiException.badRequest("Drafts can't be liked.");
         }
+        var id = new StoryLike.Id(viewerId, storyId);
+        if (!likes.existsById(id)) {
+            likes.save(new StoryLike(viewerId, storyId));
+            stories.adjustLikeCount(storyId, 1);
+        }
+        return fresh(storyId, true);
     }
 
     @Transactional
-    public void unlikeStory(Long storyId, String username) {
-        Story story = storyRepository.findById(storyId)
-                .orElseThrow(() -> new EntityNotFoundException("Story not found"));
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-
-        likeRepository.findByUserAndStory(user, story).ifPresent(like -> {
-            likeRepository.delete(like);
-            story.setLikes(story.getLikes() - 1);
-            storyRepository.save(story);
-        });
+    public LikeResponse unlike(Long storyId, Long viewerId) {
+        var id = new StoryLike.Id(viewerId, storyId);
+        if (likes.existsById(id)) {
+            likes.deleteById(id);
+            likes.flush();
+            stories.adjustLikeCount(storyId, -1);
+        }
+        return fresh(storyId, false);
     }
 
-    public boolean hasLikedStory(Long storyId, String username) {
-        Story story = storyRepository.findById(storyId)
-                .orElseThrow(() -> new EntityNotFoundException("Story not found"));
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-
-        return likeRepository.existsByUserAndStory(user, story);
+    private LikeResponse fresh(Long storyId, boolean liked) {
+        entityManager.flush();
+        entityManager.clear();
+        return new LikeResponse(liked, stories.findById(storyId).map(s -> s.getLikeCount()).orElse(0));
     }
 }

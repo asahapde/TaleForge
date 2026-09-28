@@ -1,43 +1,34 @@
 package com.taleforge.domain;
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
+import java.time.Instant;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "stories")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@EntityListeners(AuditingEntityListener.class)
 public class Story {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -45,50 +36,43 @@ public class Story {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, length = 1000)
+    @Column(nullable = false)
     private String description;
 
-    @Column(nullable = false, length = 10000)
-    private String content;
-
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "author_id", nullable = false)
-    @JsonBackReference(value = "author-stories")
     private User author;
 
     @Column(nullable = false)
-    @Builder.Default
-    private boolean published = false;
+    private boolean published;
+
+    /** Whether readers other than the author may write branches. */
+    @Column(name = "open_to_branches", nullable = false)
+    private boolean openToBranches = true;
 
     @Column(nullable = false)
-    @Builder.Default
-    private int views = 0;
+    private int views;
 
-    @Column(nullable = false)
-    @Builder.Default
-    private int likes = 0;
+    @Column(name = "like_count", nullable = false)
+    private int likeCount;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @Column(name = "chapter_count", nullable = false)
+    private int chapterCount;
+
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "story_tags", joinColumns = @JoinColumn(name = "story_id"))
     @Column(name = "tag")
-    @Builder.Default
-    private Set<String> tags = new HashSet<>();
+    private Set<String> tags = new LinkedHashSet<>();
 
-    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @JsonManagedReference(value = "story-comments")
-    @Builder.Default
-    private Set<Comment> comments = new HashSet<>();
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
 
-    @OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JsonManagedReference(value = "story-likes")
-    @Builder.Default
-    private Set<Like> likesSet = new HashSet<>();
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
 
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
+    public boolean isAuthoredBy(Long userId) {
+        return userId != null && author.getId().equals(userId);
+    }
 }

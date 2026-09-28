@@ -1,261 +1,160 @@
 package com.taleforge.service;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import com.taleforge.domain.Chapter;
 import com.taleforge.domain.Story;
-import com.taleforge.domain.User;
-import com.taleforge.dto.StoryDTO;
-import com.taleforge.dto.UserDTO;
-import com.taleforge.exception.ResourceNotFoundException;
+import com.taleforge.exception.ApiException;
+import com.taleforge.repository.ChapterRepository;
+import com.taleforge.repository.CommentRepository;
 import com.taleforge.repository.StoryRepository;
-import com.taleforge.repository.UserRepository;
+import com.taleforge.repository.StorySpecifications;
+import com.taleforge.web.dto.PageResponse;
+import com.taleforge.web.dto.StoryDtos.StoryDetail;
+import com.taleforge.web.dto.StoryDtos.StoryRequest;
+import com.taleforge.web.dto.StoryDtos.StorySummary;
+import com.taleforge.web.dto.TagCount;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StoryService {
 
-    private final StoryRepository storyRepository;
-    private final UserRepository userRepository;
+    private static final int MAX_PAGE_SIZE = 48;
+
+    private final StoryRepository stories;
+    private final ChapterRepository chapters;
+    private final CommentRepository comments;
+    private final UserService userService;
 
     @Transactional(readOnly = true)
-    public Page<StoryDTO> getStories(String sort, String tag, Pageable pageable) {
-        if (pageable == null) {
-            pageable = PageRequest.of(0, 10);
+    public PageResponse<StorySummary> search(String q, String tag, String sort, int page, int size) {
+        Specification<Story> spec = StorySpecifications.published();
+        if (StringUtils.hasText(q)) {
+            spec = spec.and(StorySpecifications.matches(q.trim()));
         }
-
-        Page<Story> stories;
-        Sort sortObj = getSort(sort);
-        Pageable pageableWithSort = PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                sortObj);
-
-        try {
-            if (tag != null && !tag.isEmpty()) {
-                stories = storyRepository.findByTagsContainingAndPublishedTrue(tag, pageableWithSort);
-            } else {
-                stories = storyRepository.findByPublishedTrue(pageableWithSort);
-            }
-            return stories.map(this::convertToDTO);
-        } catch (Exception e) {
-            log.error("Error fetching stories: ", e);
-            throw new RuntimeException("Failed to fetch stories", e);
+        if (StringUtils.hasText(tag)) {
+            spec = spec.and(StorySpecifications.hasTag(normalizeTag(tag)));
         }
+        var pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, MAX_PAGE_SIZE), sortFor(sort));
+        return PageResponse.of(stories.findAll(spec, pageable), Mapper::story);
     }
 
-    private Sort getSort(String sort) {
-        if (sort == null) {
-            return Sort.by(Sort.Direction.DESC, "createdAt");
-        }
+    @Transactional(readOnly = true)
+    public StoryDetail get(Long id, Long viewerId) {
+        Story story = requireVisible(id, viewerId);
+        return detail(story);
+    }
 
-        return switch (sort.toLowerCase()) {
-            case "oldest" -> Sort.by(Sort.Direction.ASC, "createdAt");
+    @Transactional(readOnly = true)
+    public List<TagCount> topTags(int limit) {
+        return stories.topTags(PageRequest.of(0, Math.clamp(limit, 1, 50)));
+    }
+
+    @Transactional
+    public StoryDetail create(StoryRequest request, Long authorId) {
+        if (request.firstChapter() == null) {
+            throw ApiException.badRequest("A story needs its first chapter.");
+        }
+        Story story = new Story();
+        story.setAuthor(userService.require(authorId));
+        apply(story, request);
+        story.setChapterCount(1);
+        stories.save(story);
+
+        Chapter root = new Chapter();
+        root.setStory(story);
+        root.setAuthor(story.getAuthor());
+        root.setTitle(request.firstChapter().title().trim());
+        root.setContent(ChapterService.cleanContent(request.firstChapter().content()));
+        root.setDepth(0);
+        chapters.save(root);
+
+        return detail(story);
+    }
+
+    @Transactional
+    public StoryDetail update(Long id, StoryRequest request, Long viewerId) {
+        Story story = requireOwned(id, viewerId);
+        apply(story, request);
+        return detail(story);
+    }
+
+    @Transactional
+    public void delete(Long id, Long viewerId) {
+        stories.delete(requireOwned(id, viewerId));
+    }
+
+    @Transactional
+    public void recordView(Long id) {
+        stories.incrementViews(id);
+    }
+
+    Story requireVisible(Long id, Long viewerId) {
+        Story story = stories.findWithAuthor(id).orElseThrow(() -> ApiException.notFound("Story"));
+        if (!story.isPublished() && !story.isAuthoredBy(viewerId)) {
+            throw ApiException.notFound("Story");
+        }
+        return story;
+    }
+
+    private Story requireOwned(Long id, Long viewerId) {
+        Story story = stories.findWithAuthor(id).orElseThrow(() -> ApiException.notFound("Story"));
+        if (!story.isAuthoredBy(viewerId)) {
+            throw ApiException.forbidden("Only the author can change this story.");
+        }
+        return story;
+    }
+
+    private StoryDetail detail(Story s) {
+        return new StoryDetail(s.getId(), s.getTitle(), s.getDescription(), Mapper.sortedTags(s),
+                Mapper.user(s.getAuthor()), s.isPublished(), s.isOpenToBranches(), s.getViews(), s.getLikeCount(),
+                s.getChapterCount(), chapters.countContributors(s.getId()), comments.countByStoryId(s.getId()),
+                chapters.findRootId(s.getId()).orElse(null), s.getCreatedAt(), s.getUpdatedAt());
+    }
+
+    private static void apply(Story story, StoryRequest request) {
+        story.setTitle(request.title().trim());
+        story.setDescription(request.description().trim());
+        story.setPublished(request.published());
+        if (request.openToBranches() != null) {
+            story.setOpenToBranches(request.openToBranches());
+        }
+        Set<String> tags = new LinkedHashSet<>();
+        if (request.tags() != null) {
+            request.tags().stream().map(StoryService::normalizeTag).filter(StringUtils::hasText).limit(6)
+                    .forEach(tags::add);
+        }
+        story.getTags().clear();
+        story.getTags().addAll(tags);
+    }
+
+    static String normalizeTag(String raw) {
+        String tag = raw.trim().toLowerCase(Locale.ROOT).replaceAll("^#+", "").replaceAll("[\\s_]+", "-")
+                .replaceAll("[^a-z0-9-]", "").replaceAll("-{2,}", "-").replaceAll("^-|-$", "");
+        return tag.length() > 30 ? tag.substring(0, 30) : tag;
+    }
+
+    private static Sort sortFor(String sort) {
+        String key = sort == null ? "new" : sort.toLowerCase(Locale.ROOT);
+        Sort primary = switch (key) {
             case "popular" -> Sort.by(Sort.Direction.DESC, "views");
-            case "likes" -> Sort.by(Sort.Direction.DESC, "likes");
+            case "liked" -> Sort.by(Sort.Direction.DESC, "likeCount");
+            case "branching" -> Sort.by(Sort.Direction.DESC, "chapterCount");
+            case "updated" -> Sort.by(Sort.Direction.DESC, "updatedAt");
             default -> Sort.by(Sort.Direction.DESC, "createdAt");
         };
-    }
-
-    @Transactional(readOnly = true)
-    public StoryDTO getStory(Long id) {
-        if (id == null) {
-            throw new IllegalArgumentException("Story ID cannot be null");
-        }
-
-        Story story = storyRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Story not found with id: " + id));
-        return convertToDTO(story);
-    }
-
-    @Transactional
-    public StoryDTO createStory(StoryDTO storyDTO, String username) {
-        if (storyDTO == null) {
-            throw new IllegalArgumentException("Story DTO cannot be null");
-        }
-
-        log.info("Creating story in service layer");
-        log.info("Story DTO: {}", storyDTO);
-
-        try {
-            User author = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new EntityNotFoundException("User not found with username: " + username));
-
-            Story story = Story.builder()
-                    .title(storyDTO.getTitle())
-                    .description(storyDTO.getDescription())
-                    .content(storyDTO.getContent())
-                    .published(false)
-                    .views(0)
-                    .likes(0)
-                    .tags(storyDTO.getTags() != null ? storyDTO.getTags() : new HashSet<>())
-                    .comments(new HashSet<>())
-                    .author(author)
-                    .build();
-
-            Story savedStory = storyRepository.save(story);
-            log.info("Story saved successfully with id: {}", savedStory.getId());
-
-            return convertToDTO(savedStory);
-        } catch (Exception e) {
-            log.error("Error creating story in service layer: ", e);
-            throw new RuntimeException("Failed to create story", e);
-        }
-    }
-
-    @Transactional
-    public StoryDTO updateStory(Long id, StoryDTO storyDTO, String username) {
-        Story story = storyRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Story not found with id: " + id));
-
-        if (!story.getAuthor().getUsername().equals(username)) {
-            throw new IllegalStateException("User is not authorized to update this story");
-        }
-
-        updateStoryFromDTO(story, storyDTO);
-        return convertToDTO(storyRepository.save(story));
-    }
-
-    @Transactional
-    public void deleteStory(Long id, String username) {
-        Story story = storyRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Story not found with id: " + id));
-
-        if (!story.getAuthor().getUsername().equals(username)) {
-            throw new IllegalStateException("User is not authorized to delete this story");
-        }
-
-        storyRepository.delete(story);
-    }
-
-    @Transactional
-    public StoryDTO publishStory(Long id, String username) {
-        Story story = storyRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Story not found with id: " + id));
-
-        if (!story.getAuthor().getUsername().equals(username)) {
-            throw new IllegalStateException("User is not authorized to publish this story");
-        }
-
-        story.setPublished(true);
-        Story savedStory = storyRepository.save(story);
-        return convertToDTO(savedStory);
-    }
-
-    @Transactional
-    public StoryDTO unpublishStory(Long id, String username) {
-        Story story = storyRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Story not found with id: " + id));
-
-        if (!story.getAuthor().getUsername().equals(username)) {
-            throw new IllegalStateException("User is not authorized to unpublish this story");
-        }
-
-        story.setPublished(false);
-        Story savedStory = storyRepository.save(story);
-        return convertToDTO(savedStory);
-    }
-
-    @Transactional
-    public StoryDTO incrementViews(Long id) {
-        Story story = storyRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Story not found with id: " + id));
-
-        story.setViews(story.getViews() + 1);
-        Story savedStory = storyRepository.save(story);
-        return convertToDTO(savedStory);
-    }
-
-    @Transactional(readOnly = true)
-    public StoryDTO convertToDTO(Story story) {
-        if (story == null) {
-            throw new IllegalArgumentException("Story cannot be null");
-        }
-
-        StoryDTO dto = new StoryDTO();
-        dto.setId(story.getId());
-        dto.setTitle(story.getTitle());
-        dto.setDescription(story.getDescription());
-        dto.setContent(story.getContent());
-        dto.setPublished(story.isPublished());
-        dto.setViews(story.getViews());
-        dto.setLikes(story.getLikes());
-        dto.setTags(story.getTags() != null ? story.getTags() : new HashSet<>());
-        dto.setCreatedAt(story.getCreatedAt());
-        dto.setUpdatedAt(story.getUpdatedAt());
-
-        if (story.getAuthor() != null) {
-            UserDTO authorDTO = new UserDTO();
-            authorDTO.setId(story.getAuthor().getId());
-            authorDTO.setUsername(story.getAuthor().getUsername());
-            authorDTO.setDisplayName(story.getAuthor().getDisplayName());
-            dto.setAuthor(authorDTO);
-        }
-
-        return dto;
-    }
-
-    private void updateStoryFromDTO(Story story, StoryDTO dto) {
-        story.setTitle(dto.getTitle());
-        story.setDescription(dto.getDescription());
-        story.setContent(dto.getContent());
-        story.setTags(dto.getTags() != null ? dto.getTags() : new HashSet<>());
-    }
-
-    @Transactional(readOnly = true)
-    public Page<StoryDTO> getAllStories(Pageable pageable) {
-        return storyRepository.findAll(pageable).map(this::convertToDTO);
-    }
-
-    @Transactional(readOnly = true)
-    public StoryDTO getStoryById(Long id) {
-        return storyRepository.findById(id)
-                .map(this::convertToDTO)
-                .orElseThrow(() -> new ResourceNotFoundException("Story not found with id: " + id));
-    }
-
-    @Transactional(readOnly = true)
-    public List<StoryDTO> getStoriesByAuthor(String username) {
-        return storyRepository.findByAuthorUsername(username)
-                .stream()
-                .map(this::convertToDTO)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<StoryDTO> getTopStories(String sortBy) {
-        Sort sort = getSort(sortBy);
-        return storyRepository.findAll(sort)
-                .stream()
-                .limit(10)
-                .map(this::convertToDTO)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<Story> getAllStories() {
-        return storyRepository.findAll();
-    }
-
-    @Transactional(readOnly = true)
-    public List<Story> searchStories(String query) {
-        return storyRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(query, query);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Story> getStoriesByTag(String tag) {
-        return storyRepository.findByTagsContaining(tag);
+        return primary.and(Sort.by(Sort.Direction.DESC, "id"));
     }
 }

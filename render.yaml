@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: taleforge-api
+    runtime: docker
+    plan: free
+    region: virginia
+    rootDir: backend
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # Paste the Neon connection string (Dashboard > Connect, "direct" connection, not the pooler).
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://tale-forge.vercel.app,https://*.vercel.app,http://localhost:3000

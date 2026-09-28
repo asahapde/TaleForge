@@ -1,124 +1,88 @@
 "use client";
 
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/components/auth-provider";
+import { errorMessage, safeNext } from "@/lib/api";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
 function LoginForm() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const { login } = useAuth();
+  const router = useRouter();
+  const next = safeNext(useSearchParams().get("next"));
+  const [identity, setIdentity] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
-    setLoading(true);
-
+    setBusy(true);
+    setError(null);
     try {
-      await login(email, password);
-      // Get redirect URL from query params or default to home
-      const redirectUrl = searchParams?.get("redirect") || "/";
-      router.push(redirectUrl);
-    } catch (err: any) {
-      setError(err.message || "Failed to login");
-    } finally {
-      setLoading(false);
+      await login(identity, password);
+      router.push(next);
+    } catch (err) {
+      setError(errorMessage(err));
+      setBusy(false);
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
-            </div>
-          )}
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <Link
-                href="/auth/reset-password"
-                className="font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                Forgot your password?
-              </Link>
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              {loading ? "Signing in..." : "Sign in"}
-            </button>
-          </div>
-
-          <div className="text-sm text-center">
-            <Link
-              href="/auth/register"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              Don't have an account? Sign up
-            </Link>
-          </div>
-        </form>
+    <form onSubmit={submit} className="mt-8 space-y-5">
+      <div>
+        <label htmlFor="login" className="field-label">
+          Username or email
+        </label>
+        <input
+          id="login"
+          required
+          autoComplete="username"
+          value={identity}
+          onChange={(e) => setIdentity(e.target.value)}
+          className="field"
+        />
       </div>
-    </div>
+      <div>
+        <label htmlFor="password" className="field-label">
+          Password
+        </label>
+        <input
+          id="password"
+          type="password"
+          required
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="field"
+        />
+      </div>
+      {error && <p className="notice">{error}</p>}
+      <button type="submit" disabled={busy} className="btn btn-ink w-full">
+        {busy ? "Signing in…" : "Sign in"}
+      </button>
+      <p className="meta text-center">
+        New here?{" "}
+        <Link href={`/auth/register?next=${encodeURIComponent(next)}`} className="link text-ink">
+          Make an account
+        </Link>
+      </p>
+    </form>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <LoginForm />
-    </Suspense>
+    <div className="mx-auto max-w-sm px-5 py-16">
+      <h1 className="font-display text-5xl tracking-tight">Welcome back</h1>
+      <p className="mt-2 text-ink-soft">Sign in to write, branch, and leave notes.</p>
+      <Suspense>
+        <LoginForm />
+      </Suspense>
+      <p className="meta mt-10 border-t rule pt-4 text-xs">
+        Just looking around? The demo accounts (johndoe, janedoe, alexsmith, sarahjones, mikebrown) all use the
+        password <code className="text-ink">password123</code>.
+      </p>
+    </div>
   );
 }
